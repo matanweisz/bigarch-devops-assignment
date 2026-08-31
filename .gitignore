@@ -10,3 +10,4 @@ artifacts/
 
 # macOS noise
 .DS_Store
+.superpowers/
