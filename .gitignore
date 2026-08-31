@@ -8,5 +8,10 @@ artifacts/
 # Vagrant runtime state
 .vagrant/
 
+# Gateway test virtualenv (host-side only, never shipped in the image)
+gateway/.venv/
+__pycache__/
+.pytest_cache/
+
 # macOS noise
 .DS_Store
