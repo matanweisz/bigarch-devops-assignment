@@ -11,10 +11,9 @@ purpose; clean up before submission).
 - Task 1 (pillar skeleton + gen-secrets.sh): merged, reviewed, one fix round (umask).
 - Task 2 (metrics gateway, gateway/): merged, reviewed, one fix round (snapshot
   iteration race). 28 pytest tests green on the host.
-- Task 3 (Vagrantfile + builder VM): in flight when this snapshot was taken. Its
-  files (Vagrantfile, scripts/build.sh, scripts/pull-artifacts.sh, salt/*.conf,
-  salt/states/podman, salt/states/build) may be committed after this file; check
-  `git log` and the ledger for whether Task 3 completed its review cycle.
+- Task 3 (Vagrantfile + builder VM): complete and reviewed (commits 44400ec,
+  7a641c2). Builder verified end to end: cold run 426s, warm 41s, artifacts pulled
+  to the host, precondition gates tested live.
 - Tasks 4-9: not started. Briefs get generated per task from study/plan.md.
 
 ## Resuming on the Ubuntu laptop
