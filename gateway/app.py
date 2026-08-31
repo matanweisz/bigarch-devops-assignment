@@ -28,27 +28,29 @@ def validate(payload):
         return "body must be a JSON object"
     name, value, labels = payload.get("name"), payload.get("value"), payload.get("labels")
     if not isinstance(name, str) or not METRIC_NAME_RE.match(name):
-        return "name must match %s" % METRIC_NAME_RE.pattern
+        return f"name must match {METRIC_NAME_RE.pattern}"
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return "value must be a number"
     if not isinstance(labels, dict):
         return "labels must be an object"
     if not all(isinstance(k, str) and LABEL_NAME_RE.match(k) for k in labels):
-        return "label names must match %s" % LABEL_NAME_RE.pattern
+        return f"label names must match {LABEL_NAME_RE.pattern}"
     if label_names.setdefault(name, frozenset(labels)) != frozenset(labels):
-        return "%s is already reported with labels %s" % (name, sorted(label_names[name]))
+        return f"{name} is already reported with labels {sorted(label_names[name])}"
     return None
 
 
-class StoreCollector(object):
+class StoreCollector:
     def collect(self):
         deadline = now() - TTL
-        for key, (_, _, updated) in list(series.items()):
-            if updated < deadline:
-                del series[key]
         by_name = {}
-        for (name, _), (value, labels, _) in series.items():
-            by_name.setdefault(name, []).append((labels, value))
+        # The builtin server is threaded, so a PUT can land mid-scrape. Both the
+        # prune and the read walk one snapshot; the live dict is never iterated.
+        for key, (value, labels, updated) in list(series.items()):
+            if updated < deadline:
+                series.pop(key, None)
+            else:
+                by_name.setdefault(key[0], []).append((labels, value))
         for name, points in by_name.items():
             names = sorted(label_names[name])
             gauge = GaugeMetricFamily(name, "Reported via the metrics gateway", labels=names)

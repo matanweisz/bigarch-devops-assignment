@@ -8,7 +8,8 @@ artifacts/
 # Vagrant runtime state
 .vagrant/
 
-# Gateway test virtualenv (host-side only, never shipped in the image)
+# Host-side Python test artifacts: the gateway venv, bytecode, pytest state.
+# None of it is shipped in the container image.
 gateway/.venv/
 __pycache__/
 .pytest_cache/

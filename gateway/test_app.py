@@ -103,10 +103,14 @@ def test_series_expires_after_ttl(client, monkeypatch):
     monkeypatch.setattr(gateway, "now", lambda: clock[0])
     put(client, name=CPU, value=42, labels=LABELS)
 
-    clock[0] += gateway.TTL - 1
+    clock[0] = 1000.0 + gateway.TTL - 1
     assert "slurm_job_cpu_percent" in scrape(client)
 
-    clock[0] += 2
+    # An entry exactly TTL seconds old is still live; expiry is age > TTL.
+    clock[0] = 1000.0 + gateway.TTL
+    assert "slurm_job_cpu_percent" in scrape(client)
+
+    clock[0] = 1000.0 + gateway.TTL + 1
     assert "slurm_job_cpu_percent" not in scrape(client)
 
 
