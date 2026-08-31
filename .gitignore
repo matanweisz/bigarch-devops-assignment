@@ -1,0 +1,12 @@
+# Local working material, not part of the submission
+study/
+bigarch-assignment.md
+
+# Build outputs pulled from the builder VM
+artifacts/
+
+# Vagrant runtime state
+.vagrant/
+
+# macOS noise
+.DS_Store
