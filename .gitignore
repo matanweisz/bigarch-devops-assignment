@@ -11,3 +11,6 @@ artifacts/
 # macOS noise
 .DS_Store
 .superpowers/
+
+# Generated locally by scripts/gen-secrets.sh, never committed
+salt/pillar/secrets.sls
