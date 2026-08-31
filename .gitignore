@@ -20,3 +20,6 @@ __pycache__/
 
 # Generated locally by scripts/gen-secrets.sh, never committed
 salt/pillar/secrets.sls
+
+# Claude Code local dir (worktrees, settings)
+.claude/
