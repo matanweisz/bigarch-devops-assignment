@@ -8,3 +8,4 @@ Task 2: minor (deferred): theoretical race where a PUT refreshing a key between 
 Task 3: fix round 1/5 (5 addressed, 0 open — up-trigger gating, host artifacts replace, shutdown ssh race, rsync excludes, report corrections; commits 44400ec..7a641c2)
 Task 3: complete (commits 44400ec..7a641c2, review clean after fix round 1)
 Task 3: minor (deferred): rebuild re-runs full debuild if crash lands between cp and podman save (accepted); minion.compute.conf holds one commented literal master IP — Task 5 may collapse via minion_json_config
+Task 4: dispatched and stopped 2026-08-31 12:53 before any change (migration to Ubuntu laptop); resume from task-4-brief.md + STATE.md dispatch notes

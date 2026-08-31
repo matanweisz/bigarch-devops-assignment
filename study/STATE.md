@@ -14,7 +14,24 @@ purpose; clean up before submission).
 - Task 3 (Vagrantfile + builder VM): complete and reviewed (commits 44400ec,
   7a641c2). Builder verified end to end: cold run 426s, warm 41s, artifacts pulled
   to the host, precondition gates tested live.
-- Tasks 4-9: not started. Briefs get generated per task from study/plan.md.
+- Task 4 (controller Salt core): dispatched 2026-08-31 12:52 and stopped a minute
+  later on Matan's request before any file was changed. Resume it from
+  `.superpowers/sdd/plan/task-4-brief.md`; the fuller dispatch context (traps,
+  verification list, the slurm:compute_real_memory pillar key to add) is written
+  into that brief's companion notes below.
+- Tasks 5-9: not started. Briefs get generated per task from study/plan.md.
+
+## Task 4 dispatch notes (so the next session does not reinvent them)
+
+Beyond the brief: create a valid placeholder salt/states/slurm/cron.sls (top.sls
+lists it for controller; Task 8 fills it). Add pillar key
+slurm:compute_real_memory: 5000 (controller renders slurm.conf without compute's
+grains). /etc/hosts entries for controller/compute from pillar on both roles.
+MySQL guard must not put the password in process args (defaults-extra-file).
+DEB install guard greps the dpkg version against the pillar version. Iterate
+failures via `vagrant ssh controller -c 'sudo salt-call state.highstate'`, not
+re-up. Done means: five services active, cluster registered, second highstate
+Failed: 0 / Changed: 0, exactly one node-exporter container after re-runs.
 
 ## Resuming on the Ubuntu laptop
 
