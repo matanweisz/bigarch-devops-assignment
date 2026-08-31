@@ -6,6 +6,7 @@ require "yaml"
 # Salt pillar is the source of truth for every value a guest reads. The
 # Vagrantfile parses that same file instead of restating the addresses, so the
 # host-side network config cannot drift from what the states configure in-guest.
+# This parse is why common.sls must stay plain YAML: no Jinja, ever.
 PILLAR = YAML.load_file(File.expand_path("salt/pillar/common.sls", __dir__))
 
 # RAM and CPU are host-side sizing that no state reads, so they live here. The
@@ -35,7 +36,10 @@ BUILD_STAMP = File.expand_path("artifacts/BUILD_STAMP", __dir__).freeze
 
 # Checkout noise no guest needs. Excluding it keeps every up/rsync cheap; the
 # builder additionally excludes artifacts/ because it produces them.
-RSYNC_EXCLUDE = [".git/", ".superpowers/", "gateway/.venv/"].freeze
+RSYNC_EXCLUDE = [
+  ".git/", ".superpowers/", ".claude/", "study/",
+  "gateway/.venv/", "__pycache__/", ".pytest_cache/",
+].freeze
 
 # Settings identical on every node: address, the one-way repo share, and the two
 # provider sizings. Synced folders are rsync everywhere on purpose - see
@@ -60,8 +64,12 @@ end
 # Controller and compute install the DEBs and container images the builder
 # produced. Without them provisioning dies deep inside a Salt state with an
 # unhelpful message, so fail before the box even boots and name the fix.
+#
+# Both :up and :provision: `vagrant up` on a never-created machine is the path
+# users actually take, and whether it fires the nested :provision trigger is
+# version-dependent. Gating :up too makes the check fire before the box import.
 def require_artifacts(node)
-  node.trigger.before :provision do |t|
+  node.trigger.before [:up, :provision] do |t|
     t.name = "require builder artifacts"
     t.ruby do |_env, _machine|
       next if File.exist?(BUILD_STAMP)

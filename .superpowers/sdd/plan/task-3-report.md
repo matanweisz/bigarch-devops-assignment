@@ -225,11 +225,12 @@ Salt bootstrap took ~90s.
 ## Concerns / notes for later tasks
 
 1. **`salt/minion.compute.conf` hardcodes `master: 192.168.56.10`**, duplicating
-   `net:controller_ip`. This is unavoidable in kind — the file is what lets the minion *reach* the
-   master that serves pillar — but it is a second place to edit if the address ever changes. A
-   comment says so. If Task 5 wants zero duplication, `salt.minion_json_config` can be built from
-   `PILLAR` in the Vagrantfile instead; I did not do that because it is untested and out of scope
-   here.
+   `net:controller_ip`. Correction to an earlier draft of this report: this is *not* unavoidable.
+   The minion cannot read the value from pillar, but the Vagrantfile already parses
+   `common.sls` on the host and could inject it — `salt.minion_json_config` built from `PILLAR`
+   removes the duplicate entirely. The literal is a deliberate, commented choice for one value on
+   a code path this task never boots, not a constraint. Task 5 should collapse it when it
+   exercises compute.
 2. **Controller and compute were never booted** (explicitly out of scope). Their salt provisioner
    blocks are wired per the plan but unexercised; the `install_master` + `run_highstate: false` +
    follow-up `salt-call` arrangement is unverified until Task 4.
@@ -241,3 +242,85 @@ Salt bootstrap took ~90s.
    on a slower host is worse than a hang the operator can see.
 5. `.claude/` is untracked in the repo root (other agents' worktrees). Not mine; left alone, not
    committed.
+
+---
+
+# Fix report: post-review corrections
+
+Four findings from the Task 3 review, all applied and verified. No cold rebuild was needed.
+
+## Important 1 — precondition only gated `:provision`
+
+`Vagrantfile:63` now uses `node.trigger.before [:up, :provision]`. The original only covered
+`:provision`, and I only ever tested it via `vagrant provision` — but the path a user actually
+takes is `vagrant up controller` on a never-created machine, where whether the nested `:provision`
+trigger fires is version-dependent. Verified on the real path:
+
+```
+$ mv artifacts/BUILD_STAMP artifacts/BUILD_STAMP.bak
+$ vagrant up controller
+Bringing machine 'controller' up with 'virtualbox' provider...
+==> controller: Running action triggers before up ...
+==> controller: Running trigger: generate pillar secrets...
+==> controller: Running trigger: require builder artifacts...
+artifacts/BUILD_STAMP is missing: the builder has not produced the Slurm DEBs and container
+images yet. Run `vagrant up builder` first.
+exit=1
+
+$ vagrant status controller --machine-readable | grep ',state,'
+1788169508,controller,state,not_created
+```
+
+It aborts before the box import, and the machine is still `not_created` afterwards.
+
+## Important 2 — host `artifacts/` was merged, not replaced
+
+`scripts/pull-artifacts.sh` extracted into an existing `artifacts/`. `build.sh` clears
+`/opt/artifacts/debs` guest-side, but that does nothing for the host copy, so a `slurm:version`
+bump would have left the old DEBs beside the new ones and Task 4's `apt-get install ./*.deb` would
+have seen two versions. Now `rm -rf artifacts && mkdir artifacts` before the extract — placed
+after the `tar -tf` validation, so a bad stream still cannot destroy a good copy.
+
+Verified by planting a stale DEB and running the warm pull path:
+
+```
+$ touch artifacts/debs/slurm-smd-OLDVERSION.deb && ls artifacts/debs/*.deb | wc -l
+      18
+$ vagrant up builder          # EXIT=0 ELAPSED=41s
+$ ls artifacts/debs/slurm-smd-OLDVERSION.deb
+No such file or directory (os error 2)
+$ ls artifacts/debs/*.deb | wc -l
+      17
+$ cat artifacts/BUILD_STAMP
+26.05.3-arm64
+$ vagrant status builder --machine-readable | grep ',state,'
+1788169560,builder,state,poweroff
+```
+
+## Minor 3 — `set -eu` vs. the in-guest shutdown
+
+`sudo systemctl poweroff --no-block` can still lose the SSH connection on the way out; under
+`set -e` that would have failed the trigger *after* a successful pull. Appended `|| true`. The
+bounded `vagrant status` poll below it was always the real check, and it still is.
+
+## Minor 4 — rsync excludes
+
+Added `study/`, `.claude/`, `__pycache__/`, `.pytest_cache/` — all gitignored local noise that was
+being uploaded to every guest. Confirmed in the run above:
+
+```
+==> builder:   - Exclude: [".vagrant/", ".git/", ".superpowers/", ".claude/", "study/",
+                           "gateway/.venv/", "__pycache__/", ".pytest_cache/", "artifacts/"]
+```
+
+## Documentation corrections
+
+- The "unavoidable" claim about `salt/minion.compute.conf`'s hardcoded master IP was wrong and has
+  been corrected in the Concerns section above. The Vagrantfile already parses pillar on the host,
+  so `minion_json_config` could inject it; the literal is a deliberate choice for one value on a
+  path this task never boots, not a constraint.
+- Added a comment at the `YAML.load_file` call noting that `common.sls` must stay plain YAML with
+  no Jinja, since the host-side parse has no Salt renderer.
+
+`vagrant validate` clean after all four changes. Final state: builder halted, 17 DEBs, both image
+tars, stamp `26.05.3-arm64`.

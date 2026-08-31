@@ -21,7 +21,12 @@ vagrant ssh builder -c 'sudo tar -C /opt/artifacts -cf - .' -- -T >"$tarball"
 # precondition would happily accept.
 tar -tf "$tarball" >/dev/null
 
-mkdir -p artifacts
+# Replace, never merge. Clearing /opt/artifacts guest-side does nothing for the
+# host copy, so after a slurm:version bump an extract-in-place would leave the
+# old DEBs sitting next to the new ones and Task 4's `apt-get install ./*.deb`
+# would see two versions.
+rm -rf artifacts
+mkdir artifacts
 tar -xf "$tarball" -C artifacts
 
 # The builder has done its job; it exists only to compile.
@@ -29,9 +34,10 @@ tar -xf "$tarball" -C artifacts
 # `vagrant halt builder` cannot be used here: the up action still holds this
 # machine's lock while its own after-up trigger runs, so the nested halt is
 # refused. Powering off from inside the guest sidesteps the lock entirely.
-# --no-block so systemd returns before it tears down sshd and the exit code
-# still reflects whether the command was accepted.
-vagrant ssh builder -c 'sudo systemctl poweroff --no-block' -- -T
+# --no-block so systemd returns before it tears down sshd, and `|| true` because
+# it can still lose the connection on the way out; under `set -e` that would
+# fail the trigger after a perfectly good pull. The poll below is the real check.
+vagrant ssh builder -c 'sudo systemctl poweroff --no-block' -- -T || true
 
 # Wait for the box to be genuinely down, so `vagrant status` is deterministic
 # for whatever runs straight after `vagrant up`.
