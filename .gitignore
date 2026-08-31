@@ -8,6 +8,12 @@ artifacts/
 # Vagrant runtime state
 .vagrant/
 
+# Host-side Python test artifacts: the gateway venv, bytecode, pytest state.
+# None of it is shipped in the container image.
+gateway/.venv/
+__pycache__/
+.pytest_cache/
+
 # macOS noise
 .DS_Store
 .superpowers/
