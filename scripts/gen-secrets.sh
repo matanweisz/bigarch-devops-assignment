@@ -4,6 +4,10 @@
 # provisioning and repeated `vagrant up` runs never rotate live secrets.
 set -eu
 
+# Secret material below must never be briefly world/group-readable between
+# creation and the chmod call, so restrict the process umask up front.
+umask 077
+
 cd "$(dirname "$0")/.."
 
 out="salt/pillar/secrets.sls"
