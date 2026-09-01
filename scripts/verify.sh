@@ -62,6 +62,7 @@ report $? "gateway: /metrics exposes ${probe}"
 prom_ip=$(vagrant ssh compute -c \
 	"KUBECONFIG=${KUBECONFIG_PATH} kubectl -n ${NAMESPACE} get svc ${PROM_SVC} -o jsonpath='{.spec.clusterIP}'" \
 	2>/dev/null | tr -d '\r')
+# 9090 is Prometheus's default port; not configured anywhere in this repo.
 health=$(vagrant ssh compute -c "curl -s --max-time 10 http://${prom_ip}:9090/api/v1/targets" \
 	2>/dev/null | grep -o '"health":"[a-z]*"')
 total=$(printf '%s\n' "$health" | grep -c '"health"')

@@ -63,7 +63,6 @@ gateway:
   node_port: 30080
   # Written by the builder, rsynced to every node with the repo. K3s imports it
   # from disk, so the image is never pulled from a registry.
-  image_tar: /vagrant/artifacts/images/metrics-gateway.tar
   chart: /vagrant/charts/metrics-gateway
   # The release name doubles as the Deployment name through the chart's
   # fullname helper; the rollout-restart state in monitoring/init.sls relies

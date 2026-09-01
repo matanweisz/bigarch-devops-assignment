@@ -5,7 +5,7 @@
 {% set k3s = salt['pillar.get']('k3s') %}
 {% set helm = salt['pillar.get']('helm') %}
 {% set compute_ip = salt['pillar.get']('net:compute_ip') %}
-{% set image_tar = salt['pillar.get']('gateway:image_tar') %}
+{% set image_tar = salt['pillar.get']('artifacts:root') ~ '/images/metrics-gateway.tar' %}
 {% set staged_tar = k3s.images_dir ~ '/' ~ image_tar.rsplit('/', 1)[-1] %}
 
 {#- The private NIC is eth1 on VirtualBox but not on every provider or box, and

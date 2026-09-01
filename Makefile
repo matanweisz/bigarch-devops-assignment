@@ -1,4 +1,4 @@
-.PHONY: up verify provision destroy
+.PHONY: up verify test provision destroy
 
 # Boots builder, controller and compute in that order. The builder halts itself.
 up:
@@ -6,6 +6,10 @@ up:
 
 verify:
 	scripts/verify.sh
+
+# Host-side unit tests for the metrics gateway; no VM needed.
+test:
+	cd gateway && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt pytest && .venv/bin/pytest -q
 
 # For iterating on Salt states. Synced folders are rsync, which only syncs on
 # up/reload, so the states have to be pushed before a highstate can see them.

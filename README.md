@@ -143,6 +143,10 @@ reporting 15 targets with none down — including the `node-exporter` job scrapi
 target. `srun` and `sbatch` round-trips reached COMPLETED and the gateway PUT returned
 204 with the series visible on the next scrape.
 
+The gateway also has a host-side unit suite — `make test` creates a venv under
+`gateway/` and runs 28 pytest cases covering the PUT/scrape roundtrip, label-shape
+conflicts, malformed payloads, and the TTL expiry boundary. No VM needed.
+
 For manual spot checks, the useful ones are:
 
 ```sh
