@@ -307,7 +307,8 @@ annotation limit. Server-side apply keeps no such copy.
 newest release on download.schedmd.com when this was built, and the version lives in one
 pillar key. Fetching whatever is newest at provision time would make the deployment
 unreproducible and the DEB install guard meaningless; bumping one pillar value and
-re-running the builder is the supported way to move to a newer release.
+re-running the builder (`vagrant up builder --provision` — a plain `vagrant up` skips
+provisioning on an already-built VM) is the supported way to move to a newer release.
 
 **Grafana logs in with admin/admin.** "Default user/password" is read as Grafana's own
 defaults, because that is what a reviewer will type first. Both values come from pillar
