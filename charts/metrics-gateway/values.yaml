@@ -1,0 +1,39 @@
+# All deploy-time tunables live here so Salt can pass overrides from pillar
+# without touching templates. Defaults mirror salt/pillar/common.sls.
+replicaCount: 1
+
+image:
+  repository: localhost/metrics-gateway
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# Single container port; PORT env and the container/service ports below all
+# derive from this one value so it can't drift.
+containerPort: 8080
+
+# Seconds a series lives past its last update before /metrics stops showing
+# it. Mirrors the gateway's METRIC_TTL_SECONDS env (app default 300); Salt
+# overrides it from pillar so idle dashboards go quiet.
+metricTtlSeconds: 300
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30080
+  # Named so the ServiceMonitor targets it by name instead of a number.
+  portName: http
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+serviceMonitor:
+  interval: 15s
+  path: /metrics
+  # Must match kube-prometheus-stack's release name (Helm release "kps") or
+  # its Prometheus selector never picks this ServiceMonitor up.
+  releaseLabel: kps

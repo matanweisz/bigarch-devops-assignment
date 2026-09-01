@@ -1,0 +1,6 @@
+apiVersion: v2
+name: metrics-gateway
+description: Custom Prometheus gateway that receives Phase 5 Slurm job metrics via PUT and exposes them for scraping.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

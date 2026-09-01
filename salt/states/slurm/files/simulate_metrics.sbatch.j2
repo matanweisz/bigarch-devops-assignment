@@ -1,0 +1,56 @@
+#!/bin/bash
+# Managed by Salt: salt/states/slurm/files/simulate_metrics.sbatch.j2
+#
+{%- set cron = salt['pillar.get']('slurm:cron') %}
+{%- set net = salt['pillar.get']('net') %}
+{%- set gateway = salt['pillar.get']('gateway') %}
+# --chdir is explicit and points at a directory that exists on every node:
+# slurmd chdirs into the submission working directory before it execs this
+# script, and there is no shared filesystem between controller and compute in
+# this lab (CLAUDE.md decision 4), so the controller's /opt/slurm would not
+# resolve on the compute node where the job actually runs. --output is
+# discarded for the same reason — the real product of this job is the curl
+# traffic to the gateway, not a log file that would need a directory to land
+# in on whichever node ran it.
+#SBATCH --job-name={{ cron.job_name }}
+#SBATCH --time={{ cron.time_limit }}
+#SBATCH --chdir=/tmp
+#SBATCH --output=/dev/null
+
+# SLURM_JOB_ID and SLURMD_NODENAME are set by slurmd for every job step; they
+# are the assignment's mandated labels and need no export/lookup here.
+gateway_url="http://{{ net.compute_ip }}:{{ gateway.node_port }}/update-metric"
+
+# --max-time bounds a hung gateway, and a single missed sample must not fail
+# the job — the loop keeps going. Failures are counted rather than swallowed
+# outright: a run where not one PUT landed means the gateway was unreachable
+# the whole minute, and that surfaces as a FAILED job in sacct instead of a
+# COMPLETED job next to a silently empty panel.
+ok_count=0
+report() {
+  local metric_name="$1" value="$2"
+  if curl -sS --max-time {{ cron.curl_max_time }} -X PUT "$gateway_url" \
+    -H 'Content-Type: application/json' \
+    -d "{\"name\":\"${metric_name}\",\"value\":${value},\"labels\":{\"slurm_job_id\":\"${SLURM_JOB_ID}\",\"node\":\"${SLURMD_NODENAME}\"}}" \
+    >/dev/null 2>&1; then
+    ok_count=$((ok_count + 1))
+  fi
+}
+
+for i in $(seq 1 {{ cron.iterations }}); do
+  # $RANDOM is 0-32767. The assignment asks only for simulated CPU/GPU/memory;
+  # the bands are ours, chosen to look like a node under real load: cpu
+  # 20-100%, gpu 0-100%, mem 100-2000MB.
+  cpu_percent=$(( 20 + RANDOM % 81 ))
+  gpu_percent=$(( RANDOM % 101 ))
+  mem_mb=$(( 100 + RANDOM % 1901 ))
+
+  report slurm_job_cpu_percent "$cpu_percent"
+  report slurm_job_gpu_percent "$gpu_percent"
+  report slurm_job_mem_mb "$mem_mb"
+
+  sleep {{ cron.sleep_seconds }}
+done
+
+[ "$ok_count" -gt 0 ] || exit 1
+exit 0

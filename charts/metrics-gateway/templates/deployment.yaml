@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metrics-gateway.fullname" . }}
+  labels:
+    {{- include "metrics-gateway.labels" . | nindent 4 }}
+spec:
+  # Single replica: the gateway's metric store is in-memory, so a second pod
+  # would silently split scrapes and drop half the series.
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "metrics-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "metrics-gateway.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: metrics-gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          # The image is imported into K3s's containerd from the builder's
+          # tar; it is never pulled from a registry.
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PORT
+              value: {{ .Values.containerPort | quote }}
+            - name: METRIC_TTL_SECONDS
+              value: {{ .Values.metricTtlSeconds | quote }}
+          ports:
+            - name: {{ .Values.service.portName }}
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

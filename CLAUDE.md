@@ -73,6 +73,12 @@ change them without my explicit approval.
 
 Forgetting any of these costs hours of debugging.
 
+- Salt 3008 masks pillar values (`**********`) at the `pillar.get` module boundary
+  and lifts the mask only for template renderers and `file.managed`. `file.decode`
+  was missed upstream: it decodes the mask string to zero bytes and writes an empty
+  file while reporting Changed. Never use `file.decode` with `contents_pillar` on
+  3008; write the base64 text with `file.managed` instead. When debugging, add
+  `unmask=True` to `salt-call pillar.get`.
 - Slurm 26.05 demoted munge to a weak package dependency. Install the built DEBs with
   `apt-get install ./*.deb`, never `dpkg -i`, and keep munge as a hard Salt require.
 - The controller needs `slurm-smd-client` or `sbatch` does not exist and the Phase 5
@@ -80,12 +86,16 @@ Forgetting any of these costs hours of debugging.
 - The `slurm` user must exist with the same UID on both nodes before the DEBs are
   installed, or state directories get the wrong owner.
 - `RealMemory` in slurm.conf must stay below what the kernel reports or the compute
-  node drains silently. It is derived from grains minus headroom. The node line also
-  carries `State=UNKNOWN` and `ReturnToService=2`.
+  node drains silently. It comes from pillar (`slurm:compute_real_memory`), not from
+  grains: slurm.conf must be byte-identical on every node, and the controller cannot
+  see compute's grains when it renders its own copy. The node line also carries
+  `State=UNKNOWN` and `ReturnToService=2`.
 - `ProctrackType=proctrack/cgroup` does nothing for resource limits without
   `TaskPlugin=task/cgroup,task/affinity`.
-- K3s must be started with `--node-ip 192.168.56.11 --flannel-iface eth1` or it binds
-  the NAT interface, and `--write-kubeconfig-mode 644` for a usable kubeconfig.
+- K3s must be started with `--node-ip 192.168.56.11` and a `--flannel-iface` naming the
+  private NIC, or it binds the NAT interface; `--write-kubeconfig-mode 644` for a usable
+  kubeconfig. The state derives the interface name from whichever one holds
+  `net:compute_ip` instead of assuming `eth1`, with `k3s:flannel_iface` as an override.
 - The gateway chart must ship a ServiceMonitor carrying the kube-prometheus-stack
   release label. Without it Prometheus never scrapes the gateway and the whole
   validation loop produces an empty panel.

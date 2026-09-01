@@ -1,0 +1,34 @@
+{%- set ne = salt['pillar.get']('node_exporter') -%}
+# Managed by Salt: salt/states/node_exporter/files/node-exporter.container.j2
+#
+# A Quadlet unit: systemd's podman generator turns this file into
+# node-exporter.service at daemon-reload. Declaring the container instead of
+# running one from a cmd.run is what keeps a second highstate from starting a
+# second container.
+
+[Unit]
+Description=Prometheus node exporter
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image={{ ne['image'] }}
+# Host network so the exporter reads this node's real interfaces and answers on
+# {{ ne['port'] }} at the node's own address, which is where Prometheus looks for
+# it. A bridged container would report the bridge instead.
+Network=host
+# The host's PID namespace, without which the process collectors count the
+# container's own handful of processes instead of the node's. Quadlet has no
+# key for it, so it goes through as a raw podman argument.
+PodmanArgs=--pid=host
+# The exporter reads the host's /proc, /sys and mount table through this bind;
+# --path.rootfs makes it prefix them.
+Volume=/:/host:ro,rslave
+Exec=--path.rootfs=/host --web.listen-address=:{{ ne['port'] }}
+ReadOnly=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,12 +1,29 @@
-# Local working material, not part of the submission
+# Working material: tracked deliberately for AI-use transparency (see CLAUDE.md
+# and study/STATE.md); these entries only stop new files from being added.
 study/
 bigarch-assignment.md
 
 # Build outputs pulled from the builder VM
 artifacts/
+artifacts.pre-cleanroom/
 
 # Vagrant runtime state
 .vagrant/
 
+# Host-side Python test artifacts: the gateway venv, bytecode, pytest state.
+# None of it is shipped in the container image.
+gateway/.venv/
+__pycache__/
+.pytest_cache/
+
 # macOS noise
 .DS_Store
+
+# Tracked deliberately, same as study/ above
+.superpowers/
+
+# Generated locally by scripts/gen-secrets.sh, never committed
+salt/pillar/secrets.sls
+
+# Claude Code local dir (worktrees, settings)
+.claude/

@@ -1,0 +1,281 @@
+{
+  "id": null,
+  "uid": "slurm-job-load",
+  "title": "Live Slurm Job Load",
+  "description": "Phase 5: CPU/GPU/Mem load reported by the cron-driven sbatch job (simulate_metrics.sbatch) via the metrics gateway, filtered by the job's SLURM_JOB_ID and SLURMD_NODENAME.",
+  "tags": [
+    "slurm",
+    "bigarch"
+  ],
+  "schemaVersion": 41,
+  "version": 2,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": null,
+        "definition": "label_values(slurm_job_cpu_percent, slurm_job_id)",
+        "includeAll": true,
+        "multi": true,
+        "label": "Job ID",
+        "name": "job_id",
+        "options": [],
+        "query": {
+          "query": "label_values(slurm_job_cpu_percent, slurm_job_id)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": null,
+        "definition": "label_values(slurm_job_cpu_percent, node)",
+        "includeAll": true,
+        "multi": true,
+        "label": "Node",
+        "name": "node",
+        "options": [],
+        "query": {
+          "query": "label_values(slurm_job_cpu_percent, node)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Slurm Job CPU %",
+      "description": "slurm_job_cpu_percent reported by simulate_metrics.sbatch.",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_cpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} / {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Slurm Job GPU %",
+      "description": "slurm_job_gpu_percent reported by simulate_metrics.sbatch.",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_gpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} / {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Slurm Job Memory (MB)",
+      "description": "slurm_job_mem_mb reported by simulate_metrics.sbatch.",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_mem_mb{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "job {{slurm_job_id}} / {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Live Slurm Job Load",
+      "description": "Most recent CPU/GPU/Mem sample for the selected job(s)/node(s).",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_cpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "CPU % \u2014 {{slurm_job_id}} / {{node}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "slurm_job_gpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "GPU % \u2014 {{slurm_job_id}} / {{node}}",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "slurm_job_mem_mb{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
+          "legendFormat": "Mem MB \u2014 {{slurm_job_id}} / {{node}}",
+          "instant": true
+        }
+      ]
+    }
+  ]
+}
