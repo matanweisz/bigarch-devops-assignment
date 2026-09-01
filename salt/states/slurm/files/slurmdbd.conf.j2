@@ -15,9 +15,9 @@ DbdHost={{ net['controller_host'] }}
 DbdAddr={{ net['controller_ip'] }}
 
 LogFile=/var/log/slurm/slurmdbd.log
-# Under /run/slurmdbd, not /run: the daemon drops to the slurm user and /run is
-# root-owned, so writing the pidfile at the top level fails on every start.
-# The packaged unit declares RuntimeDirectory=slurmdbd for exactly this.
+# Under /run/slurmdbd, for the reason slurm.conf gives for SlurmctldPidFile: the
+# daemon runs as the slurm user and cannot write the top of root-owned /run. The
+# packaged unit declares RuntimeDirectory=slurmdbd to match.
 PidFile=/run/slurmdbd/slurmdbd.pid
 DebugLevel=info
 

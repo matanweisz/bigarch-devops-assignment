@@ -5,8 +5,8 @@ metadata:
   labels:
     {{- include "metrics-gateway.labels" . | nindent 4 }}
 spec:
-  # Single replica: the gateway's metric store is in-memory per Task 2, so a
-  # second pod would silently split scrapes and drop half the series.
+  # Single replica: the gateway's metric store is in-memory, so a second pod
+  # would silently split scrapes and drop half the series.
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
@@ -19,8 +19,8 @@ spec:
       containers:
         - name: metrics-gateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          # Image is podman-loaded into K3s from the builder's tar (Task 6);
-          # it is never pulled from a registry.
+          # The image is imported into K3s's containerd from the builder's
+          # tar; it is never pulled from a registry.
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: PORT

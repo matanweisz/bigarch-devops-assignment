@@ -11,8 +11,8 @@ munge-group:
     - system: True
 
 # The munge package creates its own account with whatever id happens to be free,
-# so the two nodes would disagree about it. Claiming the id from pillar first is
-# what keeps /etc/munge ownership identical on both.
+# so the two nodes would disagree about it. Claiming the id from pillar before
+# the package runs keeps /etc/munge ownership identical on both.
 munge-user:
   user.present:
     - name: munge

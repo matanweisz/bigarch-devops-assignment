@@ -55,7 +55,7 @@ include:
 
 {#- The local chart has no version to pin against, so its stamp is the rendered
     values plus a hash of every file in the chart. Editing a template is then
-    indistinguishable from editing the values, which is what we want. #}
+    indistinguishable from editing the values, which is the point. #}
 {%- macro gateway_identity() -%}
 { cat {{ gateway_values }}; find {{ gateway.chart }} -type f -exec sha256sum {} + | sort; }
 {%- endmacro %}

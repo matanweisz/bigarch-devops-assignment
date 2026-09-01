@@ -35,12 +35,11 @@ slurm:
     user: slurm
     innodb_buffer_pool_size: "256M"
   # Phase 5: the cron-driven job that reports simulated CPU/GPU/Mem load to
-  # the gateway. minute is the only cron field pillar carries — the rest of
-  # the schedule is the literal "every 5 minutes" the assignment asks for,
-  # which isn't a value worth indirecting through pillar the way the interval
-  # itself is. time_limit/iterations/sleep_seconds must stay in the ~1-minute
-  # shape the assignment specifies (iterations * sleep_seconds ~= 60s, well
-  # under time_limit) if changed.
+  # the gateway. minute is the only cron field pillar carries; the other four
+  # are literal '*' in the state, since the schedule the assignment asks for
+  # is entirely in this one field. If time_limit, iterations or sleep_seconds
+  # change, keep the shape the assignment specifies: iterations *
+  # sleep_seconds ~= 60s, well under time_limit.
   cron:
     minute: "*/5"
     job_name: metrics-sim

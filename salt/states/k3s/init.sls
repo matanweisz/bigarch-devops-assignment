@@ -71,8 +71,8 @@ k3s:
 
 # The builder rebuilds this tar whenever the gateway changes, and containerd
 # does not re-read the images directory on its own once it is running. Importing
-# on change is what makes a rebuilt image actually reach the cluster; the
-# rollout that picks it up is in monitoring/init.sls.
+# on change is how a rebuilt image actually reaches the cluster; the rollout that
+# picks it up is in monitoring/init.sls.
 k3s-gateway-image-import:
   cmd.run:
     - name: /usr/local/bin/k3s ctr images import {{ staged_tar }}
@@ -83,8 +83,8 @@ k3s-gateway-image-import:
 
 helm-install:
   cmd.run:
-    # get-helm-3 needs bash; DESIRED_VERSION is what stops it resolving the
-    # latest release at install time.
+    # get-helm-3 needs bash; DESIRED_VERSION stops it resolving the latest
+    # release at install time.
     - name: curl -sfL {{ helm.install_url }} | bash
     - env:
         - DESIRED_VERSION: '{{ helm.version }}'

@@ -7,7 +7,7 @@
 # --chdir is explicit and points at a directory that exists on every node:
 # slurmd chdirs into the submission working directory before it execs this
 # script, and there is no shared filesystem between controller and compute in
-# this lab (locked decision 4), so the controller's /opt/slurm would not
+# this lab (CLAUDE.md decision 4), so the controller's /opt/slurm would not
 # resolve on the compute node where the job actually runs. --output is
 # discarded for the same reason — the real product of this job is the curl
 # traffic to the gateway, not a log file that would need a directory to land
@@ -33,8 +33,9 @@ report() {
 }
 
 for i in $(seq 1 {{ cron.iterations }}); do
-  # $RANDOM is 0-32767. The three ranges below are the plausible-load bands
-  # the assignment specifies: cpu 20-100%, gpu 0-100%, mem 100-2000MB.
+  # $RANDOM is 0-32767. The assignment asks only for simulated CPU/GPU/memory;
+  # the bands are ours, chosen to look like a node under real load: cpu
+  # 20-100%, gpu 0-100%, mem 100-2000MB.
   cpu_percent=$(( 20 + RANDOM % 81 ))
   gpu_percent=$(( RANDOM % 101 ))
   mem_mb=$(( 100 + RANDOM % 1901 ))

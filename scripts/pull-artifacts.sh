@@ -23,8 +23,8 @@ tar -tf "$tarball" >/dev/null
 
 # Replace, never merge. Clearing /opt/artifacts guest-side does nothing for the
 # host copy, so after a slurm:version bump an extract-in-place would leave the
-# old DEBs sitting next to the new ones and Task 4's `apt-get install ./*.deb`
-# would see two versions.
+# old DEBs sitting next to the new ones and the glob the slurm state installs
+# from would match two versions.
 rm -rf artifacts
 mkdir artifacts
 tar -xf "$tarball" -C artifacts
