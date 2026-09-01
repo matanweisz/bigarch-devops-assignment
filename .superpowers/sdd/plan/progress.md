@@ -20,3 +20,7 @@ Task 7: complete (chart merged 4d2542c, released by task 6 states; gateway pod R
 Task 8: authored + lead fix (edde489 merged ea4a4c6, curl state drop fe8ca8c); cron entry installed, manual submit_job.sh -> metrics-sim RUNNING on compute; awaiting cron-fire + prometheus series confirmation
 Task 9: dispatched (verify.sh, Makefile, README)
 Task 8: complete (live-verified: cron fired 11:10:02 UTC, metrics-sim jobs 3+4 on compute, all three slurm_job_* series in prometheus with slurm_job_id+node labels, controller second highstate 35/0 changed=0, exactly one crontab entry)
+Task 9: complete (merged c80e4e0 + fact fixes 3290c81; shellcheck clean, make verify green on live lab)
+Final: clean-room proof passed 2026-09-01 (destroy -f, artifacts aside, one vagrant up: builder 17 DEBs, controller 35/0, compute 36/0, verify green, second highstates changed=0, cron loop live)
+Final: compliance audit round 1 (38/40; fixes: stat panel title "Live Slurm Job Load", gateway TTL 90s pillar->chart->env, artifacts:root pillar, anchored version grep, readme RAM/latest-slurm/targets facts, gitignore) applied to fresh lab, changed=0 after
+Final: in flight — prose pass agent, fresh-eyes re-verification agent, TTL expiry proof
