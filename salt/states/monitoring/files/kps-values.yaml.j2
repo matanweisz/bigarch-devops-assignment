@@ -73,3 +73,8 @@ prometheus:
           - targets:
               - "{{ net.controller_ip }}:{{ ne_port }}"
               - "{{ net.compute_ip }}:{{ ne_port }}"
+
+# Not read by helm, which ignores YAML comments, but read by the `cmp` that
+# guards the release: without it a chart or version bump in pillar leaves this
+# file byte-identical and the upgrade never runs.
+# stack-version: {{ mon.repo_name }}/{{ mon.kps_chart }} {{ mon.kps_version }}

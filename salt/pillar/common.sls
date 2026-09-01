@@ -21,6 +21,9 @@ gateway:
   image_tar: /vagrant/artifacts/images/metrics-gateway.tar
   chart: /vagrant/charts/metrics-gateway
   release: metrics-gateway
+  # How long to wait for the gateway to become ready, both for helm --wait and
+  # for the rollout that follows a rebuilt image.
+  wait_timeout: 5m
 
 k3s:
   version: "v1.36.4+k3s1"
@@ -29,9 +32,12 @@ k3s:
   # written once here rather than twice in the states.
   kubeconfig: /etc/rancher/k3s/k3s.yaml
   images_dir: /var/lib/rancher/k3s/agent/images
-  # eth0 is Vagrant's NAT link. K3s follows the default route unless told
-  # otherwise, which puts the cluster on an address no other node can reach.
-  flannel_iface: eth1
+  # K3s follows the default route unless told otherwise, which lands it on
+  # Vagrant's NAT link where no other node can reach it. Left empty the state
+  # derives the right interface from the one holding net:compute_ip, because
+  # the private NIC is not named the same on every provider and box. Set a
+  # name here to override that.
+  flannel_iface: ""
 
 helm:
   version: "v3.21.4"
@@ -42,9 +48,12 @@ helm:
 monitoring:
   namespace: monitoring
   release: kps
+  kps_chart: kube-prometheus-stack
   kps_version: "88.6.2"
   repo_name: prometheus-community
   repo_url: https://prometheus-community.github.io/helm-charts
+  # The stack pulls a dozen images on a first install, so this is generous.
+  wait_timeout: 15m
   # Rendered values files and their applied-stamps.
   workdir: /opt/monitoring
   # Sized for the 6GB compute VM. A lab has no use for long retention, and an
@@ -58,6 +67,7 @@ monitoring:
   # ConfigMaps themselves, so the two cannot disagree.
   dashboard_label: grafana_dashboard
   dashboard_label_value: "1"
+  dashboard_prefix: grafana-dashboard-
   dashboards_dir: /vagrant/dashboards
   dashboards:
     - node-exporter-full-1860.json
