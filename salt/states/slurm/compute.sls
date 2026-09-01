@@ -8,11 +8,8 @@ include:
 
 # slurmd writes SlurmdLogFile under here (from slurm.conf.j2) and needs the
 # directory to exist with slurm ownership before it can start; slurm/common.sls
-# creates it but does not order slurmd after it.
-#
-# Same reasoning as controller.sls's /var/spool/slurmctld: the slurmd package
-# lays this down on install, but only correctly if the slurm account already
-# existed at that point, so ownership is asserted rather than assumed.
+# creates it but does not order slurmd after it. Ownership is asserted here for
+# the same reason controller.sls asserts it on /var/spool/slurmctld.
 /var/spool/slurmd:
   file.directory:
     - user: slurm

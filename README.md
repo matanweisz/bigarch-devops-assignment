@@ -14,12 +14,11 @@ MariaDB, munge, and a node_exporter container under Podman. **compute** is a Sal
 running slurmd next to a single-node K3s cluster hosting kube-prometheus-stack and the
 gateway.
 
-The interesting path through the system is the last one. Every five minutes cron on the
-controller submits a Slurm job; slurmctld dispatches it to slurmd on compute; the job
-reports simulated CPU, GPU and memory values to the gateway twelve times over a minute,
-labelled with its own `SLURM_JOB_ID` and `SLURMD_NODENAME`; Prometheus scrapes the
-gateway; and the "Live Slurm Job Load" dashboard in Grafana graphs it. Nothing in that
-chain is mocked.
+The interesting path runs end to end. Every five minutes cron on the controller submits
+a Slurm job; slurmctld dispatches it to slurmd on compute; the job reports simulated CPU,
+GPU and memory values to the gateway twelve times over a minute, labelled with its own
+`SLURM_JOB_ID` and `SLURMD_NODENAME`; Prometheus scrapes the gateway; and the "Live Slurm
+Job Load" dashboard in Grafana graphs it. Nothing in that chain is mocked.
 
 ```mermaid
 flowchart LR
@@ -68,19 +67,19 @@ flowchart LR
   an alternative, but VirtualBox is what this was built and verified on.
 - Vagrant 2.4.x.
 - About 9GB of free RAM at peak. The builder (4GB) halts before the other two boot;
-  controller (3GB) and compute (6GB) are what stay up. Roughly 25GB of disk.
+  controller (3GB) and compute (6GB) are the ones that stay up. Roughly 25GB of disk.
 - `curl` and GNU make on the host for `make verify`.
 
 Verified on Ubuntu amd64 with VirtualBox 7.2.6 and Vagrant 2.4.9, and earlier on macOS
 arm64. The box is `bento/ubuntu-24.04` at a pinned version, which publishes both
 architectures, so a reviewer on Intel rebuilds identical artifacts transparently.
 
-One trap worth knowing about on Linux hosts. On kernel 6.12 and later the in-tree KVM
-modules can claim the CPU's virtualization extensions at load time, and VirtualBox then
-refuses to start any VM with `VERR_VMX_IN_VMX_ROOT_MODE`. Whether the conflict actually
-bites depends on the kernel and VirtualBox build — on the machine this lab was verified
-on (kernel 7.0, VirtualBox 7.2.6) the two coexisted without issue. If you do hit that
-error, unload the modules and retry:
+One trap on Linux hosts. On kernel 6.12 and later the in-tree KVM modules can claim the
+CPU's virtualization extensions at load time, and VirtualBox then refuses to start any VM
+with `VERR_VMX_IN_VMX_ROOT_MODE`. Whether the conflict actually bites depends on the
+kernel and VirtualBox build — on the machine this lab was verified on (kernel 7.0,
+VirtualBox 7.2.6) the two coexisted without issue. If you do hit that error, unload the
+modules and retry:
 
 ```sh
 sudo modprobe -r kvm_intel kvm     # kvm_amd on AMD hosts
@@ -103,11 +102,11 @@ random 128-byte munge key. The file is gitignored and the script is a no-op if i
 already exists, so repeated runs never rotate a live secret and no credential is ever
 committed.
 
-Expect roughly 25 minutes cold on a reasonably modern machine. The builder is the long
-pole at about 14 minutes on a 16-thread host, almost all of it compiling Slurm; it halts
-itself when it is done, and a second `vagrant up` skips the compile through a version
-stamp and returns almost immediately. The controller takes about 4 minutes and compute
-about 6, most of the latter being kube-prometheus-stack pulling images.
+Expect roughly 25 minutes cold. The builder is the long pole at about 14 minutes on a
+16-thread host, almost all of it compiling Slurm; it halts itself when it is done, and a
+second `vagrant up` skips the compile through a version stamp and returns almost
+immediately. The controller takes about 4 minutes and compute about 6, most of the
+latter being kube-prometheus-stack pulling images.
 
 To reach Grafana, point `grafana.local` at the compute node on whatever machine you are
 browsing from:
@@ -135,15 +134,15 @@ idle/alloc/mix, that both node exporters answer on port 9100, that a probe metri
 the gateway's NodePort comes back 204 and then shows up in its `/metrics` output, and
 that Prometheus reports zero targets in any state other than up.
 
-For reference, this is what a healthy lab looked like on the last full verification run,
-on an Ubuntu amd64 host: 17 Slurm 26.05.3 DEBs built on the builder, K3s v1.36.4+k3s1
-with the node Ready, kube-prometheus-stack 88.6.2 with every pod Running, and Prometheus
-reporting 15 targets with none down — including the `node-exporter` job scraping both
+This is what a healthy lab looked like on the last full verification run, on an Ubuntu
+amd64 host: 17 Slurm 26.05.3 DEBs built on the builder, K3s v1.36.4+k3s1 with the node
+Ready, kube-prometheus-stack 88.6.2 with every pod Running, and Prometheus reporting 15
+targets with none down — including the `node-exporter` job scraping both
 `192.168.56.10:9100` and `192.168.56.11:9100`, and the gateway's own ServiceMonitor
 target. `srun` and `sbatch` round-trips reached COMPLETED and the gateway PUT returned
 204 with the series visible on the next scrape.
 
-For manual spot checks, the useful ones are:
+For manual spot checks:
 
 ```sh
 vagrant ssh controller -c 'sinfo'                     # compute node idle
@@ -162,11 +161,12 @@ to wait for the next five-minute boundary, or submit one by hand with
 ### The builder
 
 The builder's highstate applies the same shared `podman` state the controller uses, and
-`salt/states/build/init.sls` then runs `scripts/build.sh`. The build follows SchedMD's own Debian flow rather than a
-hand-rolled `configure && make`: `mk-build-deps -i debian/control` installs the build
-dependencies straight out of the tarball's own control file, and `debuild -b -uc -us`
-produces the separated `slurm-smd-*` packages. The gateway image is built with
-`podman build` and saved as a tar alongside the node_exporter image.
+`salt/states/build/init.sls` then runs `scripts/build.sh`. The build follows SchedMD's
+own Debian flow rather than a hand-rolled `configure && make`:
+`mk-build-deps -i debian/control` installs the build dependencies straight out of the
+tarball's own control file, and `debuild -b -uc -us` produces the separated `slurm-smd-*`
+packages. The gateway image is built with `podman build` and saved as a tar alongside
+the node_exporter image.
 
 Everything lands in `/opt/artifacts` in the guest. A Vagrant trigger scoped to the
 builder's define block then streams that directory to the host over
@@ -188,18 +188,17 @@ provisioner named `highstate` runs
 keeps the mandated provisioner in place and makes a failed state actually fail
 `vagrant up` rather than scroll past.
 
-From there the states do the expected things in the expected order: munge key from
-pillar, MariaDB with the accounting database, the DEBs installed by pointing `apt-get
-install` at their paths rather than `dpkg -i` so apt resolves the dependencies between
-them, then slurmdbd and slurmctld, and a node_exporter container managed as a Podman
-Quadlet unit so systemd owns its lifecycle and a re-run cannot produce a second
-container.
+From there the states run in dependency order: munge key from pillar, MariaDB with the
+accounting database, the DEBs installed by pointing `apt-get install` at their paths
+rather than `dpkg -i` so apt resolves the dependencies between them, then slurmdbd and
+slurmctld, and a node_exporter container managed as a Podman Quadlet unit so systemd owns
+its lifecycle and a re-run cannot produce a second container.
 
 ### The compute node
 
 The minion registers with the master at `192.168.56.10` and its key is accepted
-automatically. Slurm's compute-side packages and `cgroup.conf` come from the same shared
-templates the controller uses.
+automatically. Slurm's compute-side packages, `slurm.conf` and `cgroup.conf` all come
+from the same shared state the controller uses.
 
 K3s is installed with three flags that matter:
 `--node-ip 192.168.56.11 --flannel-iface <private nic> --write-kubeconfig-mode 644`.
@@ -228,9 +227,8 @@ Slurm-launched process, which is the reason this is a real Slurm job and not a s
 script pretending to be one.
 
 The gateway holds its series in memory with a TTL (90 seconds here, set from pillar
-through the chart values). When a job ends its series stop being
-refreshed and expire, so the dashboard goes quiet instead of showing a flat line at the
-last value forever.
+through the chart values). When a job ends its series stop being refreshed and expire, so
+the dashboard goes quiet instead of showing a flat line at the last value forever.
 
 ## Design decisions and interpretations
 
@@ -266,9 +264,9 @@ described above. The cost is that edits on the host do not appear in a guest unt
 **MariaDB is provisioned with plain SQL, not Salt's mysql states.** `mysql_database` and
 `mysql_user` need a Python MySQL driver importable by Salt's own interpreter, and Salt
 3008 ships as a onedir bundle that cannot see apt-installed packages. Rendering
-`CREATE DATABASE IF NOT EXISTS` / `CREATE USER IF NOT EXISTS` / `GRANT` from pillar into a
-root-only file and applying it over the unix socket is idempotent, has no dependencies,
-and is obvious to read.
+`CREATE DATABASE IF NOT EXISTS` / `CREATE USER IF NOT EXISTS` / `GRANT` from pillar into
+a root-only file and applying it over the unix socket is idempotent and needs no driver
+at all.
 
 **Both Helm releases are guarded the same way.** The guard on each is a single `unless`
 that checks the release reports `STATUS: deployed` *and* that a stamp file matches the
@@ -277,15 +275,15 @@ the local one. The obvious alternatives each fail in a specific way: `onchanges`
 values file alone can never retry a failed first install, because the file is written once
 and stays unchanged; a status check alone never notices a values, chart or version change;
 and both together inherit the first problem, because Salt requires every gate to pass
-before a state runs. The stamp is false on a first run, false after a failure, false after
-any input changes, and true only on a clean re-run.
+before a state runs. The stamp is true only on a clean re-run: a first run, a failed
+install and any changed input all leave it false.
 
 **Dashboards are vendored and applied server-side.** Both dashboards are committed as
 JSON and delivered as ConfigMaps rather than fetched from grafana.com at pod start, so the
 deployment is reproducible offline. They are applied with `kubectl apply --server-side`
-for a concrete reason: a client-side apply stores a copy of the whole object in the
-`last-applied-configuration` annotation, and dashboard 1860 is about 469KB against a
-256KB annotation limit. Server-side apply keeps no such copy.
+because a client-side apply stores a copy of the whole object in the
+`last-applied-configuration` annotation, and dashboard 1860 is about 469KB against a 256KB
+annotation limit. Server-side apply keeps no such copy.
 
 **"Latest Slurm" is a pinned version.** The builder compiles 26.05.3, which was the
 newest release on download.schedmd.com when this was built, and the version lives in one
@@ -309,9 +307,9 @@ minion really received, `salt-call pillar.get <key> unmask=True`.
 
 ## Idempotency
 
-The rule the whole state tree is written to is that a second highstate changes nothing.
-Every state either declares the end result or carries a guard that compares the system
-against what it should be, and phase boundaries were checked with a full
+The whole state tree is written to one rule: a second highstate changes nothing. Every
+state either declares the end result or carries a guard that compares the system against
+what it should be, and phase boundaries were checked with a full
 `vagrant destroy -f && vagrant up` followed by a second highstate. The second run on a
 fully provisioned lab:
 
@@ -338,8 +336,8 @@ misleading "Minion did not return" during the long package and image installs wh
 minion is in fact still working.
 
 After editing Salt states on the host, remember that synced folders are rsync and only
-sync on `up` and `reload`. `make provision` does the right thing: it rsyncs both guests
-and re-runs both highstates. `make destroy` tears the whole lab down.
+sync on `up`, `reload`, and an explicit `vagrant rsync`. `make provision` handles it: it
+rsyncs both guests and re-runs both highstates. `make destroy` tears the whole lab down.
 
 ## AI use
 
@@ -348,8 +346,8 @@ rather than glossed over, so here is what it actually looked like.
 
 Claude Fable 5 led the sessions, with Opus and Sonnet subagents doing per-task authoring
 and a separate adversarial review agent reading each task's output before anything was
-committed. `CLAUDE.md` in this repo is not documentation written after the fact — it is
-the working context the agents were given, and it is committed on purpose. Its "decisions
+committed. `CLAUDE.md` in this repo is the working context the agents were given rather
+than documentation written afterwards, and it is committed on purpose. Its "decisions
 locked by the author" section lists the calls I made and told the agents not to relitigate
 (auto-accept stays, no NFS, no map.jinja, admin/admin, the unused `import sys` stays), and
 its "traps" section is a running list of things confirmed during research or found the
@@ -360,15 +358,15 @@ authoring pass, an adversarial review pass, a fix round, and then live verificat
 actual VMs. That last step is the one that matters — several things that read perfectly
 well did not survive contact with the machines.
 
-Three concrete catches from the review and verification rounds, since specifics are more
-useful than a claim of rigour:
+Three catches from the review and verification rounds:
 
 - The dashboard ConfigMap for Grafana dashboard 1860 was originally applied client-side.
   Review caught that a 469KB dashboard cannot fit in the 256KB `last-applied-configuration`
   annotation a client-side apply writes, which is why it now uses `--server-side`.
-- The munge key was written with `file.decode` from pillar, which is the idiomatic Salt
-  approach and produces an empty key on Salt 3008 because of the pillar-masking regression
-  described above. Found live, not in review; the state now uses `file.managed`.
+- The munge key was written with `file.decode` from pillar. That is the idiomatic Salt
+  approach, and on Salt 3008 it produces an empty key because of the pillar-masking
+  regression described above. Found live, not in review; the state now uses
+  `file.managed`.
 - The first Helm guard combined `unless: helm status ... deployed` with `onchanges` on the
   values file. Review pointed out that Salt requires *all* gates to pass, so the pair is an
   AND, and the combination would have skipped legitimate upgrades and never retried a
@@ -378,12 +376,12 @@ I reviewed every diff before it was committed and I can explain every line in th
 Where something is non-obvious, the rationale is in a comment next to it rather than in my
 head.
 
-One thing that deserves a direct mention: `gateway/app.py` imports `sys` and never uses
-it, with no comment saying so. That is the assignment's Phase 4 instruction, followed
-literally. No linter or CI is configured in this repo for the same reason: any Python
-linter would flag that line, and the "fix" would be to break an explicit requirement. I
-read the instruction as a check on whether submitters read the spec and review what their
-tools produce, so it stays, and this paragraph is where it gets acknowledged.
+`gateway/app.py` imports `sys` and never uses it, with no comment saying so. That is the
+assignment's Phase 4 instruction, followed literally. No linter or CI is configured in
+this repo for the same reason: any Python linter would flag that line, and the "fix"
+would be to break an explicit requirement. I read the instruction as a check on whether
+submitters read the spec and review what their tools produce, so it stays, and this
+paragraph is where it gets acknowledged.
 
 ## Known limitations
 

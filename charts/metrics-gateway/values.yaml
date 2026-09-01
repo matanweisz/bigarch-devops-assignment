@@ -1,5 +1,5 @@
-# All deploy-time tunables live here so Salt (Task 7) can pass overrides
-# from pillar without touching templates. Defaults mirror salt/pillar/common.sls.
+# All deploy-time tunables live here so Salt can pass overrides from pillar
+# without touching templates. Defaults mirror salt/pillar/common.sls.
 replicaCount: 1
 
 image:
@@ -12,8 +12,8 @@ image:
 containerPort: 8080
 
 # Seconds a series lives past its last update before /metrics stops showing
-# it. Mirrors the gateway's METRIC_TTL_SECONDS env (app default 300); the
-# deployment overrides it from pillar so idle dashboards go quiet.
+# it. Mirrors the gateway's METRIC_TTL_SECONDS env (app default 300); Salt
+# overrides it from pillar so idle dashboards go quiet.
 metricTtlSeconds: 300
 
 service:

@@ -102,12 +102,14 @@ cmd.run duplicates containers on re-runs, which is a named grading criterion. A
 Quadlet unit is declarative: re-running highstate changes nothing unless the file
 changed.
 
-## Kubernetes: K3s single node, with two non-default flags
+## Kubernetes: K3s single node, with three non-default flags
 
-K3s is mandated. The flags matter: `--node-ip 192.168.56.11 --flannel-iface eth1`
+K3s is mandated. The flags matter: `--node-ip 192.168.56.11` and `--flannel-iface`
 pin it to the private network (Vagrant's first interface is NAT, and K3s would
 otherwise bind that), and `--write-kubeconfig-mode 644` makes kubectl usable without
-sudo. Bundled Traefik stays enabled because the Grafana ingress uses it.
+sudo. The interface name is derived from whichever NIC holds the compute address rather
+than hardcoded to `eth1`, since it is not named the same on every provider and box;
+pillar can override it. Bundled Traefik stays enabled because the Grafana ingress uses it.
 
 ## Helm deployments: helm CLI for both charts
 
@@ -115,9 +117,10 @@ sudo. Bundled Traefik stays enabled because the Grafana ingress uses it.
 and "via Helm" is the literal assignment wording. The K3s HelmChart CRD was the
 tempting alternative (no helm binary, self-reconciling) but handles a local unpacked
 chart badly, and using it for one chart and the CLI for the other means two
-mechanisms for one job. Guarding the command with both a release-status check and
-`onchanges` on the values file keeps reruns clean and still retries a failed first
-install.
+mechanisms for one job. The guard on each release is a single `unless` pairing a
+release-status check with a stamp file holding the release's current inputs. Pairing the
+status check with `onchanges` on the values file was the first design and does not work:
+Salt ANDs its gates, so a failed first install is never retried.
 
 ## kube-prometheus-stack configuration choices
 

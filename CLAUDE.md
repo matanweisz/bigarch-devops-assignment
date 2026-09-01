@@ -90,8 +90,10 @@ Forgetting any of these costs hours of debugging.
   carries `State=UNKNOWN` and `ReturnToService=2`.
 - `ProctrackType=proctrack/cgroup` does nothing for resource limits without
   `TaskPlugin=task/cgroup,task/affinity`.
-- K3s must be started with `--node-ip 192.168.56.11 --flannel-iface eth1` or it binds
-  the NAT interface, and `--write-kubeconfig-mode 644` for a usable kubeconfig.
+- K3s must be started with `--node-ip 192.168.56.11` and a `--flannel-iface` naming the
+  private NIC, or it binds the NAT interface; `--write-kubeconfig-mode 644` for a usable
+  kubeconfig. The state derives the interface name from whichever one holds
+  `net:compute_ip` instead of assuming `eth1`, with `k3s:flannel_iface` as an override.
 - The gateway chart must ship a ServiceMonitor carrying the kube-prometheus-stack
   release label. Without it Prometheus never scrapes the gateway and the whole
   validation loop produces an empty panel.

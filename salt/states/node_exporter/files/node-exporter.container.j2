@@ -22,7 +22,7 @@ Network=host
 # key for it, so it goes through as a raw podman argument.
 PodmanArgs=--pid=host
 # The exporter reads the host's /proc, /sys and mount table through this bind;
-# --path.rootfs is what makes it prefix them.
+# --path.rootfs makes it prefix them.
 Volume=/:/host:ro,rslave
 Exec=--path.rootfs=/host --web.listen-address=:{{ ne['port'] }}
 ReadOnly=true

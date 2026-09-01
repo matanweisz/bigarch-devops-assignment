@@ -38,9 +38,9 @@ node-exporter-daemon-reload:
       - file: /etc/containers/systemd/node-exporter.container
 
 # No enable: True. systemctl cannot enable a generated unit, and asking it to is
-# a hard failure; the [Install] section in the .container file is what starts the
-# exporter at boot. Running the service is declarative, so a re-run finds it
-# already up and leaves the container alone instead of starting a second one.
+# a hard failure; the [Install] section in the .container file starts the exporter
+# at boot. Running the service is declarative, so a re-run finds it already up and
+# leaves the container alone instead of starting a second one.
 node-exporter:
   service.running:
     - require:
