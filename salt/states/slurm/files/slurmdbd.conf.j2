@@ -1,0 +1,28 @@
+{%- set net = salt['pillar.get']('net') -%}
+{%- set db = salt['pillar.get']('slurm:db') -%}
+# Managed by Salt: salt/states/slurm/files/slurmdbd.conf.j2
+#
+# Contains the accounting database password, so the file is 0600 slurm:slurm.
+# slurmdbd refuses to start if it is readable by anyone else.
+
+AuthType=auth/munge
+SlurmUser=slurm
+
+# DbdHost has to match this machine's hostname or slurmdbd exits saying it is
+# not configured to run here; DbdAddr is what it actually binds, and it has to
+# be the private address slurmctld reaches it on rather than 127.0.1.1.
+DbdHost={{ net['controller_host'] }}
+DbdAddr={{ net['controller_ip'] }}
+
+LogFile=/var/log/slurm/slurmdbd.log
+# Under /run/slurmdbd, not /run: the daemon drops to the slurm user and /run is
+# root-owned, so writing the pidfile at the top level fails on every start.
+# The packaged unit declares RuntimeDirectory=slurmdbd for exactly this.
+PidFile=/run/slurmdbd/slurmdbd.pid
+DebugLevel=info
+
+StorageType=accounting_storage/mysql
+StorageHost=localhost
+StorageUser={{ db['user'] }}
+StoragePass={{ db['password'] }}
+StorageLoc={{ db['name'] }}

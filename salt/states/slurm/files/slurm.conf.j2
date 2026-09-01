@@ -1,0 +1,60 @@
+{%- set net = salt['pillar.get']('net') -%}
+{%- set slurm = salt['pillar.get']('slurm') -%}
+# Managed by Salt: salt/states/slurm/files/slurm.conf.j2
+#
+# Slurm compares this file across the cluster and complains when the nodes
+# disagree, so every value here comes from pillar and never from the local
+# node's grains: one template, one rendering, two identical files.
+
+ClusterName={{ slurm['cluster_name'] }}
+
+# The host(address) form is deliberate. Vagrant maps each node's own name to
+# 127.0.1.1, so resolving "controller" on the controller would bind slurmctld to
+# loopback and leave the compute node unable to reach it.
+SlurmctldHost={{ net['controller_host'] }}({{ net['controller_ip'] }})
+
+SlurmUser=slurm
+AuthType=auth/munge
+
+StateSaveLocation=/var/spool/slurmctld
+SlurmdSpoolDir=/var/spool/slurmd
+# Under /run/slurmctld, not /run: slurmctld drops to the slurm user and /run is
+# root-owned, so writing the pidfile at the top level fails on every start. The
+# packaged unit declares RuntimeDirectory=slurmctld for exactly this. slurmd
+# stays at the top of /run because it runs as root and can write there.
+SlurmctldPidFile=/run/slurmctld/slurmctld.pid
+SlurmdPidFile=/run/slurmd.pid
+
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+SlurmctldDebug=info
+SlurmdDebug=info
+
+# cgroup containment is only half configured by ProctrackType: without the
+# task/cgroup plugin nothing actually constrains a job's cores or memory.
+ProctrackType=proctrack/cgroup
+TaskPlugin=task/cgroup,task/affinity
+JobAcctGatherType=jobacct_gather/cgroup
+
+SchedulerType=sched/backfill
+SelectType=select/cons_tres
+SelectTypeParameters=CR_Core_Memory
+
+AccountingStorageType=accounting_storage/slurmdbd
+# Addressed by IP for the same reason SlurmctldHost carries an explicit address:
+# slurmdbd binds the private interface, not 127.0.1.1.
+AccountingStorageHost={{ net['controller_ip'] }}
+
+# RealMemory has to stay under what the kernel reports on the compute node or
+# slurmctld drains it without ever scheduling anything, and the value cannot be
+# derived from grains because the controller renders this file too and would
+# then produce a different NodeName line than the compute node does. Pillar
+# carries one number, sized with headroom under the VM's memory.
+#
+# ReturnToService=2 lets a node that was down come back on its own after a
+# reboot; State=UNKNOWN lets slurmctld take whatever the node reports at
+# registration instead of insisting the node is down until someone resumes it.
+NodeName={{ net['compute_host'] }} NodeAddr={{ net['compute_ip'] }} CPUs={{ slurm['compute_cpus'] }} RealMemory={{ slurm['compute_real_memory'] }} State=UNKNOWN
+ReturnToService=2
+
+PartitionName={{ slurm['partition'] }} Nodes=ALL Default=YES MaxTime=INFINITE State=UP
