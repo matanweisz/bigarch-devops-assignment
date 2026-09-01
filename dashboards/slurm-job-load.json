@@ -1,0 +1,134 @@
+{
+  "id": null,
+  "uid": "slurm-job-load",
+  "title": "Live Slurm Job Load",
+  "description": "Placeholder panels for the Phase 5 gateway metrics (slurm_job_cpu_percent, slurm_job_gpu_percent, slurm_job_mem_mb). Template vars and refined queries land in Task 8 once the cron job is producing real series.",
+  "tags": [
+    "slurm",
+    "bigarch"
+  ],
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Slurm Job CPU %",
+      "description": "slurm_job_cpu_percent, placeholder query until real job labels exist (Task 8).",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_cpu_percent",
+          "legendFormat": "{{slurm_job_id}} / {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Slurm Job GPU %",
+      "description": "slurm_job_gpu_percent, placeholder query until real job labels exist (Task 8).",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_gpu_percent",
+          "legendFormat": "{{slurm_job_id}} / {{node}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Slurm Job Memory (MB)",
+      "description": "slurm_job_mem_mb, placeholder query until real job labels exist (Task 8).",
+      "datasource": null,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "slurm_job_mem_mb",
+          "legendFormat": "{{slurm_job_id}} / {{node}}"
+        }
+      ]
+    }
+  ]
+}
