@@ -9,3 +9,7 @@ Task 3: fix round 1/5 (5 addressed, 0 open — up-trigger gating, host artifacts
 Task 3: complete (commits 44400ec..7a641c2, review clean after fix round 1)
 Task 3: minor (deferred): rebuild re-runs full debuild if crash lands between cp and podman save (accepted); minion.compute.conf holds one commented literal master IP — Task 5 may collapse via minion_json_config
 Task 4: dispatched and stopped 2026-08-31 12:53 before any change (migration to Ubuntu laptop); resume from task-4-brief.md + STATE.md dispatch notes
+Task 4: fix round 1/5 (7 addressed, 0 open — munge:uid pillar restore, host.present clean, /var/log/slurm edges, runtime-dir pidfiles, key mode window, --pid=host, comment truth; commit 9b98340)
+Task 4: fix round 2/5 (1 addressed — salt 3008 pillar masking breaks file.decode, munge key now base64 text via file.managed; found live on first controller highstate; commit 8b7966c)
+Task 4: complete (merged c953b0e + fix 8b7966c; live-verified on amd64 laptop: 5 services active, cluster registered, second highstate 32/0 changed=0, one exporter container)
+Task 5: authored and lead-reviewed (commit 71dd8e0, merged a51d8b9); live verification pending compute up after task 6 merge
