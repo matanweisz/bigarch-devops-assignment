@@ -1,4 +1,5 @@
-# Local working material, not part of the submission
+# Working material: tracked deliberately for AI-use transparency (see CLAUDE.md
+# and study/STATE.md); these entries only stop new files from being added.
 study/
 bigarch-assignment.md
 
@@ -17,6 +18,8 @@ __pycache__/
 
 # macOS noise
 .DS_Store
+
+# Tracked deliberately, same as study/ above
 .superpowers/
 
 # Generated locally by scripts/gen-secrets.sh, never committed

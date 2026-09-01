@@ -33,16 +33,17 @@ slurm_job_id and node labels.
   METRIC_TTL_SECONDS, so dashboards go quiet between five-minute cron cycles.
 - Artifact paths derive from pillar artifacts:root.
 
-## Remaining before submission (all need Matan)
+## Submission decisions (closed)
 
-1. Publishing: main is far behind impl, and local impl is well ahead of
-   origin/impl. Decide the shape of the published history, then push.
-2. History hygiene decisions, unchanged from the Mac snapshot: the two main
-   commits carrying the ZoomInfo author email, and whether study/,
-   .superpowers/, and bigarch-assignment.md stay in the published repo
-   (currently tracked; the .gitignore entries only stop new additions).
-   `git rm -r --cached study .superpowers bigarch-assignment.md` on a submission
-   branch is the minimal-surgery option; CLAUDE.md stays either way.
+- The working material (study/, .superpowers/, bigarch-assignment.md, CLAUDE.md)
+  stays tracked on purpose: the submission is graded on AI transparency, and these
+  files are the primary evidence of how the work was actually planned, reviewed,
+  and verified. The .gitignore entries for them predate the decision and are kept
+  with a comment pointing here.
+- The git history is published complete and unrewritten, including the two early
+  commits made on the previous machine with their original author metadata.
+  Transparency over tidiness.
+- Both Grafana screenshots are committed under docs/, taken from the live lab.
 
 ## Environment notes for this laptop
 
