@@ -1,0 +1,21 @@
+{#- Rendered to {{ salt['pillar.get']('monitoring:workdir') }}/gateway-values.yaml
+    by salt/states/monitoring/init.sls. Only the values pillar owns are set
+    here; everything else stays at the chart's own defaults so the chart
+    remains installable on its own. -#}
+{%- set gateway = salt['pillar.get']('gateway') %}
+{%- set mon = salt['pillar.get']('monitoring') %}
+{#- Pillar carries one image reference so nothing can pin a repository against
+    the wrong tag; the chart wants the two halves separately. -#}
+{%- set image = gateway.image.rsplit(':', 1) %}
+
+image:
+  repository: {{ image[0] }}
+  tag: "{{ image[1] }}"
+
+service:
+  nodePort: {{ gateway.node_port }}
+
+serviceMonitor:
+  # Must equal the kube-prometheus-stack release name: its Prometheus selects
+  # ServiceMonitors by that label and ignores everything else.
+  releaseLabel: {{ mon.release }}

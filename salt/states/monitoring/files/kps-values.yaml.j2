@@ -1,0 +1,80 @@
+{#- Rendered to {{ salt['pillar.get']('monitoring:workdir') }}/kps-values.yaml by
+    salt/states/monitoring/init.sls. Every value below comes from pillar; the
+    state passes this file to `helm upgrade --install` and re-runs the upgrade
+    whenever its content changes. Key paths verified against
+    kube-prometheus-stack {{ salt['pillar.get']('monitoring:kps_version') }}. -#}
+{%- set net = salt['pillar.get']('net') %}
+{%- set mon = salt['pillar.get']('monitoring') %}
+{%- set grafana = salt['pillar.get']('grafana') %}
+{%- set ne_port = salt['pillar.get']('node_exporter:port') %}
+
+grafana:
+  adminUser: {{ grafana.user | yaml_dquote }}
+  adminPassword: {{ grafana.password | yaml_dquote }}
+
+  ingress:
+    enabled: true
+    ingressClassName: {{ grafana.ingress_class }}
+    hosts:
+      - {{ grafana.host }}
+    # No secretName: Traefik answers with its built-in self-signed certificate
+    # for any TLS host it holds no certificate for. cert-manager would add a
+    # moving part for a hostname that only resolves through /etc/hosts.
+    tls:
+      - hosts:
+          - {{ grafana.host }}
+
+  sidecar:
+    dashboards:
+      # The vendored dashboards are delivered as labelled ConfigMaps, so the
+      # sidecar is the only import path. Stated explicitly rather than relying
+      # on the chart default staying true.
+      enabled: true
+      label: {{ mon.dashboard_label }}
+      labelValue: "{{ mon.dashboard_label_value }}"
+      searchNamespace: ALL
+
+# K3s runs the control plane as one process and exposes none of these four
+# endpoints. Left enabled they become permanently failing scrape targets.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus-node-exporter:
+  prometheus:
+    monitor:
+      # The DaemonSet stays and keeps serving the compute node's exporter port.
+      # Its ServiceMonitor is off because additionalScrapeConfigs below already
+      # scrapes that endpoint by address, and two paths to the same target
+      # double every series.
+      enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: {{ mon.retention }}
+    resources:
+      requests:
+        cpu: {{ mon.prometheus_cpu_request }}
+        memory: {{ mon.prometheus_memory_request }}
+      limits:
+        memory: {{ mon.prometheus_memory_limit }}
+    # Static scrape of both nodes' exporters: the controller's is a Podman
+    # container outside this cluster and has no Service to select, so a
+    # ServiceMonitor cannot reach it. One job covers both nodes and keeps the
+    # job label identical for the Node Exporter Full dashboard.
+    additionalScrapeConfigs:
+      - job_name: node-exporter
+        static_configs:
+          - targets:
+              - "{{ net.controller_ip }}:{{ ne_port }}"
+              - "{{ net.compute_ip }}:{{ ne_port }}"
+
+# Not read by helm, which ignores YAML comments, but read by the `cmp` that
+# guards the release: without it a chart or version bump in pillar leaves this
+# file byte-identical and the upgrade never runs.
+# stack-version: {{ mon.repo_name }}/{{ mon.kps_chart }} {{ mon.kps_version }}
