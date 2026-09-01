@@ -1,4 +1,4 @@
-.PHONY: up verify test provision destroy
+.PHONY: up verify test provision destroy help
 
 # Boots builder, controller and compute in that order. The builder halts itself.
 up:
@@ -24,3 +24,10 @@ provision:
 
 destroy:
 	vagrant destroy -f
+
+help:
+	@echo "up         boot the whole lab; the builder halts itself when done"
+	@echo "verify     host-side smoke test of the running lab"
+	@echo "test       gateway unit tests in a local venv, no VM needed"
+	@echo "provision  rsync states to the guests and re-run both highstates"
+	@echo "destroy    tear the whole lab down"

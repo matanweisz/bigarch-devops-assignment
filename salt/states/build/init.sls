@@ -11,8 +11,10 @@ build-artifacts:
         - SLURM_VERSION: '{{ version }}'
         - GATEWAY_IMAGE: '{{ salt['pillar.get']('gateway:image') }}'
         - NODE_EXPORTER_IMAGE: '{{ salt['pillar.get']('node_exporter:image') }}'
-    # Guard on the stamp's content, not its existence: a version bump in pillar
-    # has to trigger a rebuild, and `creates:` would silently skip it.
-    - unless: grep -qx "{{ version }}-$(dpkg --print-architecture)" /opt/artifacts/BUILD_STAMP
+    # The script's --check mode compares both stamps (DEB version+arch, image
+    # tags + gateway content hash), so the skip logic lives in one place and a
+    # pillar bump or gateway edit triggers exactly the rebuild it needs.
+    # `creates:` would silently skip all of that.
+    - unless: bash /vagrant/scripts/build.sh --check
     - require:
       - sls: podman

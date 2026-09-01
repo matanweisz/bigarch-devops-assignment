@@ -20,6 +20,9 @@ GPU and memory values to the gateway twelve times over a minute, labelled with i
 `SLURM_JOB_ID` and `SLURMD_NODENAME`; Prometheus scrapes the gateway; and the "Live Slurm
 Job Load" dashboard in Grafana graphs it. Nothing in that chain is mocked.
 
+Phase numbers below refer to the five phases of the original brief, committed as
+[bigarch-assignment.md](bigarch-assignment.md).
+
 ```mermaid
 flowchart LR
   subgraph host["host, 192.168.56.0/24"]
@@ -68,11 +71,12 @@ flowchart LR
 - Vagrant 2.4.x.
 - About 9GB of free RAM at peak. The builder (4GB) halts before the other two boot;
   controller (3GB) and compute (6GB) are the ones that stay up. Roughly 25GB of disk.
-- `curl` and GNU make on the host for `make verify`.
+- `curl` and GNU make on the host for `make verify`; `python3` for `make test`.
 
 Verified on Ubuntu amd64 with VirtualBox 7.2.6 and Vagrant 2.4.9, and earlier on macOS
-arm64. The box is `bento/ubuntu-24.04` at a pinned version, which publishes both
-architectures, so a reviewer on Intel rebuilds identical artifacts transparently.
+arm64. The box is `bento/ubuntu-24.04` at a pinned version. Bento publishes that version
+for both architectures, and everything is compiled in-guest, so an Intel host
+builds the matching amd64 artifacts without any change to the repo.
 
 One trap on Linux hosts. On kernel 6.12 and later the in-tree KVM modules can claim the
 CPU's virtualization extensions at load time, and VirtualBox then refuses to start any VM
@@ -102,11 +106,17 @@ random 128-byte munge key. The file is gitignored and the script is a no-op if i
 already exists, so repeated runs never rotate a live secret and no credential is ever
 committed.
 
-Expect roughly 25 minutes cold. The builder is the long pole at about 14 minutes on a
-16-thread host, almost all of it compiling Slurm; it halts itself when it is done, and a
-second `vagrant up` skips the compile through a version stamp and returns almost
+Expect roughly 25 minutes cold, plus the one-time `bento/ubuntu-24.04` box download
+(about 600MB) on the very first run. The builder is the long pole at about 14 minutes
+on a 16-thread host, almost all of it compiling Slurm; it halts itself when it is done,
+and a second `vagrant up` skips the compile through a version stamp and returns almost
 immediately. The controller takes about 4 minutes and compute about 6, most of the
 latter being kube-prometheus-stack pulling images.
+
+If provisioning dies partway — a dropped connection, a closed lid — just run
+`vagrant up` again. Every step is guarded: the builder resumes past whatever it
+already finished, and a half-provisioned controller or compute converges on the next
+highstate. Tear the whole lab down with `make destroy`.
 
 To reach Grafana, point `grafana.local` at the compute node on whatever machine you are
 browsing from:
@@ -154,7 +164,8 @@ vagrant ssh controller -c 'srun -N1 hostname'         # prints: compute
 vagrant ssh controller -c 'sacct -X --format=JobID,JobName,State'
 ```
 
-In Grafana, the two dashboards to open by name are **Node Exporter Full**, which should
+In Grafana, the two dashboards to open by name are **Node Exporter Full** (the
+vendored dashboard 1860), which should
 show both nodes in its instance picker, and **Live Slurm Job Load**, which fills in
 within a minute of the cron job firing. If you have just brought the lab up you may have
 to wait for the next five-minute boundary, or submit one by hand with
@@ -177,9 +188,12 @@ builder's define block then streams that directory to the host over
 `vagrant ssh builder -c 'sudo tar -cf -'` and powers the machine off. There is no NFS
 anywhere in this project, on purpose, so this SSH pull is the only path artifacts have
 back to the host; from there the ordinary one-way rsync synced folder carries them into
-the other two guests. A `BUILD_STAMP` carrying the Slurm version and architecture is
-written last, and both the build state and the controller/compute preconditions key off
-it, so a missing or half-finished build fails early with a message that names the fix.
+the other two guests. Two stamps gate the work: `BUILD_STAMP` covers the
+Slurm DEBs (version and architecture) and `IMAGE_STAMP` covers the image tars (both
+tags plus a content hash of `gateway/`), so bumping an image tag or editing the gateway
+source rebuilds exactly what changed without repeating the 14-minute compile. The
+controller and compute preconditions key off `BUILD_STAMP`, so a missing or
+half-finished build fails early with a message that names the fix.
 
 ### The controller
 

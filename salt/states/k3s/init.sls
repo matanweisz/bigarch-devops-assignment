@@ -75,7 +75,9 @@ k3s:
 # picks it up is in monitoring/init.sls.
 k3s-gateway-image-import:
   cmd.run:
-    - name: /usr/local/bin/k3s ctr images import {{ staged_tar }}
+    # -n k8s.io: ctr defaults to its own namespace, but kubelet/CRI only
+    # sees images in k8s.io — without it the import lands where nothing looks.
+    - name: /usr/local/bin/k3s ctr -n k8s.io images import {{ staged_tar }}
     - require:
       - service: k3s
     - onchanges:

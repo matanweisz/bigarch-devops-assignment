@@ -132,5 +132,5 @@ grafana:
   ingress_class: traefik
 
 node_exporter:
-  image: docker.io/prom/node-exporter:v1.9.1
+  image: docker.io/prom/node-exporter:v1.12.1
   port: 9100
