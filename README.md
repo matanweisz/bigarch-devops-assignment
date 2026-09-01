@@ -64,6 +64,24 @@ flowchart LR
   graf --> prom
 ```
 
+## Repository map
+
+| Path | What it is |
+|---|---|
+| [Vagrantfile](Vagrantfile) | the three VM definitions, synced folders, triggers, and provisioners |
+| [salt/states/](salt/states/) | all configuration state; [top.sls](salt/states/top.sls) maps each role to its states |
+| [salt/pillar/](salt/pillar/) | every tunable value in one place: [common.sls](salt/pillar/common.sls) |
+| [scripts/](scripts/) | [build.sh](scripts/build.sh) (builder pipeline), [gen-secrets.sh](scripts/gen-secrets.sh), [verify.sh](scripts/verify.sh), [pull-artifacts.sh](scripts/pull-artifacts.sh) |
+| [gateway/](gateway/) | the metrics gateway: [app.py](gateway/app.py), [tests](gateway/test_app.py), [Containerfile](gateway/Containerfile) |
+| [charts/metrics-gateway/](charts/metrics-gateway/) | the Helm chart that deploys the gateway onto K3s |
+| [dashboards/](dashboards/) | vendored Grafana dashboards: 1860 and the custom Slurm panel |
+| [docs/](docs/) | the screenshots embedded below |
+| [CLAUDE.md](CLAUDE.md) | the working context the AI agents were given: locked decisions and confirmed traps |
+| [study/](study/) | design spec, decisions log, implementation plan, and state snapshots |
+| [.superpowers/sdd/plan/](.superpowers/sdd/plan/) | per-task briefs, reports, and the execution ledger |
+| [bigarch-assignment.md](bigarch-assignment.md) | the original brief |
+| [Makefile](Makefile) | `up`, `verify`, `test`, `provision`, `destroy` (`make help`) |
+
 ## Prerequisites
 
 - VirtualBox 7.1 or 7.2. A `vmware_desktop` provider block is kept in the Vagrantfile as
