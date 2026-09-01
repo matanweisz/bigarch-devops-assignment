@@ -19,3 +19,4 @@ Task 6: complete (merged 14991e0; live-verified: K3s v1.36.4 Ready, kps 88.6.2 a
 Task 7: complete (chart merged 4d2542c, released by task 6 states; gateway pod Running from imported tar, PUT 204 + /metrics roundtrip, ServiceMonitor target up)
 Task 8: authored + lead fix (edde489 merged ea4a4c6, curl state drop fe8ca8c); cron entry installed, manual submit_job.sh -> metrics-sim RUNNING on compute; awaiting cron-fire + prometheus series confirmation
 Task 9: dispatched (verify.sh, Makefile, README)
+Task 8: complete (live-verified: cron fired 11:10:02 UTC, metrics-sim jobs 3+4 on compute, all three slurm_job_* series in prometheus with slurm_job_id+node labels, controller second highstate 35/0 changed=0, exactly one crontab entry)
