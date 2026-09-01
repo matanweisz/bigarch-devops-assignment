@@ -19,13 +19,14 @@ slurm-group:
     - gid: {{ slurm_uid }}
     - system: True
 
-# Before the DEBs, always. The packages create the account themselves if it is
-# missing, each node picking its own free id, and the state directories they lay
-# down would then be owned by different users on the two nodes.
+# Before the DEBs, always. SchedMD's debian/ ships no maintainer scripts, so
+# nothing in the packages creates this account: the directories they unpack
+# carry ownership numerically and land on whatever the id happens to mean on
+# each node. Claiming the id from pillar first is what makes those directories
+# resolve to the slurm user, and to the same slurm user on both nodes.
 #
-# The account names are fixed by the Debian packaging and by slurm.conf's
-# SlurmUser; only the numeric ids have to agree across nodes, which is what
-# pillar carries.
+# The account names are fixed by the packaging and by slurm.conf's SlurmUser;
+# only the numeric ids have to agree across nodes, which is what pillar carries.
 slurm-user:
   user.present:
     - name: slurm
@@ -41,15 +42,22 @@ slurm-user:
 # Vagrant points each node's own name at 127.0.1.1, which is useless to the other
 # side of the cluster. slurm.conf pins the addresses explicitly as well; these
 # entries are what make sinfo, srun and scontrol output resolvable by hand.
+#
+# clean drops the name from every other line it appears on, which is the only
+# way the node's own name stops resolving to loopback. Without it Salt leaves
+# the Vagrant line in place and warns about the duplicate on every single
+# highstate, which is exactly the noise the idempotency proof must not have.
 controller-host-entry:
   host.present:
     - name: {{ net['controller_host'] }}
     - ip: {{ net['controller_ip'] }}
+    - clean: True
 
 compute-host-entry:
   host.present:
     - name: {{ net['compute_host'] }}
     - ip: {{ net['compute_ip'] }}
+    - clean: True
 
 # apt-get, never dpkg -i: apt resolves the dependencies between the built
 # packages, and Slurm 26.05 demoted munge to a weak dependency that dpkg would
@@ -84,6 +92,9 @@ slurm-packages:
 
 # slurmctld and slurmdbd run as SlurmUser and write here; slurmd runs as root
 # and does not care who owns the directory.
+#
+# After the packages, not before: dpkg unpacks this directory root-owned, so
+# chowning it first would just be undone by the install.
 /var/log/slurm:
   file.directory:
     - user: slurm
@@ -91,6 +102,7 @@ slurm-packages:
     - mode: '0755'
     - require:
       - user: slurm-user
+      - cmd: slurm-packages
 
 /etc/slurm/slurm.conf:
   file.managed:

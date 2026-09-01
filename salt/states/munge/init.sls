@@ -27,9 +27,12 @@ munge-user:
 
 munge:
   pkg.installed:
-    # The base box ships with an empty apt list cache, so the first install of a
-    # run has to refresh it. A refresh reports no state changes, so this stays
-    # invisible on re-runs.
+    # The apt index here is whatever last refreshed it: salt-bootstrap's own
+    # update when it installed Salt on a fresh boot, and nothing at all on a
+    # later `vagrant provision` against a long-lived box, where the pinned
+    # versions the stale index names may no longer be on the mirror. Refreshing
+    # makes this install independent of that, and it reports no state changes,
+    # so it stays invisible in the idempotency proof.
     - refresh: True
     - require:
       - user: munge-user
@@ -42,6 +45,22 @@ munge:
     - require:
       - pkg: munge
 
+# file.decode writes contents and nothing else, so it would create the key at
+# whatever the umask says and leave it world-readable until a later state
+# tightened it. Creating the empty file at its final mode first closes that
+# window: the decode below opens an existing 0600 file and only rewrites its
+# bytes. replace: False keeps this state away from the contents it does not own.
+munge-key-file:
+  file.managed:
+    - name: /etc/munge/munge.key
+    - user: munge
+    - group: munge
+    - mode: '0600'
+    - replace: False
+    - create: True
+    - require:
+      - file: /etc/munge
+
 # The key is 128 random bytes. Carrying it through pillar base64-encoded and
 # decoding here keeps binary content out of the YAML and out of git.
 /etc/munge/munge.key:
@@ -50,19 +69,7 @@ munge:
     - contents_pillar: munge:key_b64
     - checksum: sha256
     - require:
-      - file: /etc/munge
-
-# file.decode writes contents and nothing else. replace: False lets a second
-# state own mode and ownership without touching the bytes.
-munge-key-permissions:
-  file.managed:
-    - name: /etc/munge/munge.key
-    - user: munge
-    - group: munge
-    - mode: '0600'
-    - replace: False
-    - require:
-      - file: /etc/munge/munge.key
+      - file: munge-key-file
 
 munge-service:
   service.running:
@@ -71,5 +78,5 @@ munge-service:
     - require:
       - pkg: munge
     - watch:
+      - file: munge-key-file
       - file: /etc/munge/munge.key
-      - file: munge-key-permissions

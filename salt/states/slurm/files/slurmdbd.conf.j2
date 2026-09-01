@@ -15,7 +15,10 @@ DbdHost={{ net['controller_host'] }}
 DbdAddr={{ net['controller_ip'] }}
 
 LogFile=/var/log/slurm/slurmdbd.log
-PidFile=/run/slurmdbd.pid
+# Under /run/slurmdbd, not /run: the daemon drops to the slurm user and /run is
+# root-owned, so writing the pidfile at the top level fails on every start.
+# The packaged unit declares RuntimeDirectory=slurmdbd for exactly this.
+PidFile=/run/slurmdbd/slurmdbd.pid
 DebugLevel=info
 
 StorageType=accounting_storage/mysql

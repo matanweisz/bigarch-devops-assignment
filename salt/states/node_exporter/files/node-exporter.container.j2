@@ -17,6 +17,10 @@ Image={{ ne['image'] }}
 # {{ ne['port'] }} at the node's own address, which is where Prometheus looks for
 # it. A bridged container would report the bridge instead.
 Network=host
+# The host's PID namespace, without which the process collectors count the
+# container's own handful of processes instead of the node's. Quadlet has no
+# key for it, so it goes through as a raw podman argument.
+PodmanArgs=--pid=host
 # The exporter reads the host's /proc, /sys and mount table through this bind;
 # --path.rootfs is what makes it prefix them.
 Volume=/:/host:ro,rslave

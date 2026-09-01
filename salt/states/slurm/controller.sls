@@ -34,13 +34,16 @@ include:
       - user: slurm-user
 
 # The database has to be reachable before slurmdbd starts: on a first run it
-# creates the whole accounting schema, and it exits if it cannot log in.
+# creates the whole accounting schema, and it exits if it cannot log in. The log
+# directory is a hard requirement for the same reason: slurmdbd runs as the
+# slurm user and dies in log_init if it cannot open its own log file.
 slurmdbd:
   service.running:
     - enable: True
     - require:
       - cmd: slurm-packages
       - cmd: slurm-db-provisioned
+      - file: /var/log/slurm
       - service: mariadb
       - service: munge-service
     - watch:

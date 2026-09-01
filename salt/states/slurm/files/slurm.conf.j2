@@ -18,7 +18,11 @@ AuthType=auth/munge
 
 StateSaveLocation=/var/spool/slurmctld
 SlurmdSpoolDir=/var/spool/slurmd
-SlurmctldPidFile=/run/slurmctld.pid
+# Under /run/slurmctld, not /run: slurmctld drops to the slurm user and /run is
+# root-owned, so writing the pidfile at the top level fails on every start. The
+# packaged unit declares RuntimeDirectory=slurmctld for exactly this. slurmd
+# stays at the top of /run because it runs as root and can write there.
+SlurmctldPidFile=/run/slurmctld/slurmctld.pid
 SlurmdPidFile=/run/slurmd.pid
 
 SlurmctldLogFile=/var/log/slurm/slurmctld.log

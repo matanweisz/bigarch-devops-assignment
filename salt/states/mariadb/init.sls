@@ -9,9 +9,10 @@
 mariadb-server:
   pkg.installed:
     - name: mariadb-server
-    # The base box ships with an empty apt list cache, so the first install of a
-    # run has to refresh it. A refresh reports no state changes, so this stays
-    # invisible on re-runs.
+    # Same reasoning as the munge package: the apt index is only as fresh as the
+    # last thing that refreshed it, which on a re-provision is nothing. A
+    # refresh reports no state changes, so it costs the idempotency proof
+    # nothing.
     - refresh: True
 
 # Slurm's accounting schema is index-heavy and its purge queries hold locks for

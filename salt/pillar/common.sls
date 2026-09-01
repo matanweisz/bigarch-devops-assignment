@@ -35,6 +35,9 @@ slurm:
     user: slurm
     innodb_buffer_pool_size: "256M"
 
+munge:
+  uid: 966
+
 gateway:
   image: localhost/metrics-gateway:1.0.0
   node_port: 30080
