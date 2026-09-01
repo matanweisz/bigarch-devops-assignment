@@ -53,6 +53,11 @@ slurm:
 munge:
   uid: 966
 
+# Root of the builder's exported artifacts as the guests see them through the
+# /vagrant synced folder. States join subpaths onto this.
+artifacts:
+  root: /vagrant/artifacts
+
 gateway:
   image: localhost/metrics-gateway:1.0.0
   node_port: 30080
@@ -60,7 +65,14 @@ gateway:
   # from disk, so the image is never pulled from a registry.
   image_tar: /vagrant/artifacts/images/metrics-gateway.tar
   chart: /vagrant/charts/metrics-gateway
+  # The release name doubles as the Deployment name through the chart's
+  # fullname helper; the rollout-restart state in monitoring/init.sls relies
+  # on that, so change both together or not at all.
   release: metrics-gateway
+  # Seconds a reported series lives past its last update. Shorter than the
+  # five-minute cron period on purpose: the dashboard goes quiet between jobs
+  # instead of drawing a flat line from stale values.
+  metric_ttl_seconds: 90
   # How long to wait for the gateway to become ready, both for helm --wait and
   # for the rollout that follows a rebuilt image.
   wait_timeout: 5m

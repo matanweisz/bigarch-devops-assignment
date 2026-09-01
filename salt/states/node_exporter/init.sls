@@ -13,7 +13,7 @@ include:
 # a change on every run.
 node-exporter-image:
   cmd.run:
-    - name: podman load -i /vagrant/artifacts/images/node-exporter.tar
+    - name: podman load -i {{ salt['pillar.get']('artifacts:root') }}/images/node-exporter.tar
     - unless: podman image exists {{ image }}
     - require:
       - pkg: podman

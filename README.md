@@ -67,8 +67,8 @@ flowchart LR
 - VirtualBox 7.1 or 7.2. A `vmware_desktop` provider block is kept in the Vagrantfile as
   an alternative, but VirtualBox is what this was built and verified on.
 - Vagrant 2.4.x.
-- About 13GB of free RAM while all three VMs are up, and roughly 25GB of disk. The
-  builder returns most of its share when it halts.
+- About 9GB of free RAM at peak. The builder (4GB) halts before the other two boot;
+  controller (3GB) and compute (6GB) are what stay up. Roughly 25GB of disk.
 - `curl` and GNU make on the host for `make verify`.
 
 Verified on Ubuntu amd64 with VirtualBox 7.2.6 and Vagrant 2.4.9, and earlier on macOS
@@ -227,7 +227,8 @@ from `SLURM_JOB_ID` and `SLURMD_NODENAME`. Those variables only exist inside a
 Slurm-launched process, which is the reason this is a real Slurm job and not a shell
 script pretending to be one.
 
-The gateway holds its series in memory with a TTL. When a job ends its series stop being
+The gateway holds its series in memory with a TTL (90 seconds here, set from pillar
+through the chart values). When a job ends its series stop being
 refreshed and expire, so the dashboard goes quiet instead of showing a flat line at the
 last value forever.
 
@@ -285,6 +286,12 @@ deployment is reproducible offline. They are applied with `kubectl apply --serve
 for a concrete reason: a client-side apply stores a copy of the whole object in the
 `last-applied-configuration` annotation, and dashboard 1860 is about 469KB against a
 256KB annotation limit. Server-side apply keeps no such copy.
+
+**"Latest Slurm" is a pinned version.** The builder compiles 26.05.3, which was the
+newest release on download.schedmd.com when this was built, and the version lives in one
+pillar key. Fetching whatever is newest at provision time would make the deployment
+unreproducible and the DEB install guard meaningless; bumping one pillar value and
+re-running the builder is the supported way to move to a newer release.
 
 **Grafana logs in with admin/admin.** "Default user/password" is read as Grafana's own
 defaults, because that is what a reviewer will type first. Both values come from pillar

@@ -4,6 +4,7 @@ bigarch-assignment.md
 
 # Build outputs pulled from the builder VM
 artifacts/
+artifacts.pre-cleanroom/
 
 # Vagrant runtime state
 .vagrant/

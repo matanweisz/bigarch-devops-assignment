@@ -25,6 +25,8 @@ spec:
           env:
             - name: PORT
               value: {{ .Values.containerPort | quote }}
+            - name: METRIC_TTL_SECONDS
+              value: {{ .Values.metricTtlSeconds | quote }}
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.containerPort }}

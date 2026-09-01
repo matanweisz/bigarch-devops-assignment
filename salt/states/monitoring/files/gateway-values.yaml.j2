@@ -19,3 +19,4 @@ serviceMonitor:
   # Must equal the kube-prometheus-stack release name: its Prometheus selects
   # ServiceMonitors by that label and ignores everything else.
   releaseLabel: {{ mon.release }}
+metricTtlSeconds: {{ gateway.metric_ttl_seconds }}

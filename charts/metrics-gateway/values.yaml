@@ -11,6 +11,11 @@ image:
 # derive from this one value so it can't drift.
 containerPort: 8080
 
+# Seconds a series lives past its last update before /metrics stops showing
+# it. Mirrors the gateway's METRIC_TTL_SECONDS env (app default 300); the
+# deployment overrides it from pillar so idle dashboards go quiet.
+metricTtlSeconds: 300
+
 service:
   type: NodePort
   port: 8080

@@ -71,12 +71,12 @@ slurm-packages:
   cmd.run:
     - name: >-
         apt-get update && apt-get install -y
-        {%- for p in packages %} /vagrant/artifacts/debs/{{ p }}_*.deb{% endfor %}
+        {%- for p in packages %} {{ salt['pillar.get']('artifacts:root') }}/debs/{{ p }}_*.deb{% endfor %}
     - env:
         - DEBIAN_FRONTEND: noninteractive
     - unless:
 {%- for p in packages %}
-      - dpkg-query -W -f='${Version}' {{ p }} 2>/dev/null | grep -q '^{{ version }}'
+      - dpkg-query -W -f='${Version}' {{ p }} 2>/dev/null | grep -q '^{{ version }}-'
 {%- endfor %}
     - require:
       - user: slurm-user

@@ -170,7 +170,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Latest Values",
+      "title": "Live Slurm Job Load",
       "description": "Most recent CPU/GPU/Mem sample for the selected job(s)/node(s).",
       "datasource": null,
       "gridPos": {
@@ -204,7 +204,7 @@
               },
               {
                 "id": "displayName",
-                "value": "CPU % — {{slurm_job_id}} / {{node}}"
+                "value": "CPU % \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           },
@@ -228,7 +228,7 @@
               },
               {
                 "id": "displayName",
-                "value": "GPU % — {{slurm_job_id}} / {{node}}"
+                "value": "GPU % \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           },
@@ -248,7 +248,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Mem MB — {{slurm_job_id}} / {{node}}"
+                "value": "Mem MB \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           }
@@ -272,19 +272,19 @@
         {
           "refId": "A",
           "expr": "slurm_job_cpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
-          "legendFormat": "CPU % — {{slurm_job_id}} / {{node}}",
+          "legendFormat": "CPU % \u2014 {{slurm_job_id}} / {{node}}",
           "instant": true
         },
         {
           "refId": "B",
           "expr": "slurm_job_gpu_percent{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
-          "legendFormat": "GPU % — {{slurm_job_id}} / {{node}}",
+          "legendFormat": "GPU % \u2014 {{slurm_job_id}} / {{node}}",
           "instant": true
         },
         {
           "refId": "C",
           "expr": "slurm_job_mem_mb{slurm_job_id=~\"$job_id\", node=~\"$node\"}",
-          "legendFormat": "Mem MB — {{slurm_job_id}} / {{node}}",
+          "legendFormat": "Mem MB \u2014 {{slurm_job_id}} / {{node}}",
           "instant": true
         }
       ]
