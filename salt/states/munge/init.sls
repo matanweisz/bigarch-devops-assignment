@@ -45,31 +45,23 @@ munge:
     - require:
       - pkg: munge
 
-# file.decode writes contents and nothing else, so it would create the key at
-# whatever the umask says and leave it world-readable until a later state
-# tightened it. Creating the empty file at its final mode first closes that
-# window: the decode below opens an existing 0600 file and only rewrites its
-# bytes. replace: False keeps this state away from the contents it does not own.
-munge-key-file:
+# The key file carries the base64 text of 128 random bytes, written verbatim.
+# munged treats the keyfile as opaque bytes, so the text form carries the same
+# entropy as the decoded binary would. Decoding on the node is not an option:
+# Salt 3008 masks pillar values at the pillar.get module boundary and lifts the
+# mask for template renderers and file.managed, but not for file.decode, which
+# therefore receives '**********', discards it as invalid base64 and writes an
+# empty key (verified against 3008.2 on this box). file.managed also sets the
+# final mode atomically, so the key is never world-readable in passing.
+/etc/munge/munge.key:
   file.managed:
-    - name: /etc/munge/munge.key
+    - contents_pillar: munge:key_b64
     - user: munge
     - group: munge
     - mode: '0600'
-    - replace: False
-    - create: True
+    - show_changes: False
     - require:
       - file: /etc/munge
-
-# The key is 128 random bytes. Carrying it through pillar base64-encoded and
-# decoding here keeps binary content out of the YAML and out of git.
-/etc/munge/munge.key:
-  file.decode:
-    - encoding_type: base64
-    - contents_pillar: munge:key_b64
-    - checksum: sha256
-    - require:
-      - file: munge-key-file
 
 munge-service:
   service.running:
@@ -78,5 +70,4 @@ munge-service:
     - require:
       - pkg: munge
     - watch:
-      - file: munge-key-file
       - file: /etc/munge/munge.key

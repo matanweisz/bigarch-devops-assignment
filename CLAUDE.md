@@ -73,6 +73,12 @@ change them without my explicit approval.
 
 Forgetting any of these costs hours of debugging.
 
+- Salt 3008 masks pillar values (`**********`) at the `pillar.get` module boundary
+  and lifts the mask only for template renderers and `file.managed`. `file.decode`
+  was missed upstream: it decodes the mask string to zero bytes and writes an empty
+  file while reporting Changed. Never use `file.decode` with `contents_pillar` on
+  3008; write the base64 text with `file.managed` instead. When debugging, add
+  `unmask=True` to `salt-call pillar.get`.
 - Slurm 26.05 demoted munge to a weak package dependency. Install the built DEBs with
   `apt-get install ./*.deb`, never `dpkg -i`, and keep munge as a hard Salt require.
 - The controller needs `slurm-smd-client` or `sbatch` does not exist and the Phase 5

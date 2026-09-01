@@ -60,13 +60,18 @@ formula idiom, exists to abstract differences between operating systems; with on
 across three nodes it would be ceremony, and over-abstraction reads as a negative in
 a hiring review.
 
-## Munge key: random bytes, base64 in pillar, file.decode on the node
+## Munge key: random bytes, kept as base64 text from pillar to keyfile
 
 Munge needs an identical secret key on every node. We generate 128 random bytes once
 on the host (gen-secrets script), store them base64-encoded in a gitignored pillar
-file, and let `file.decode` write the binary key with mode 0600. Direct
-`contents_pillar` has a history of corrupting binary content, and committing a real
-key to git would be a red flag even in a lab.
+file, and write that base64 text verbatim to /etc/munge/munge.key (0600) with
+`file.managed` + `contents_pillar`. munged treats the keyfile as opaque bytes, so
+the text form carries the same entropy as the decoded binary. The original plan
+decoded on the node with `file.decode`, but Salt 3008 masks pillar values at the
+pillar.get module boundary and only lifts the mask for template renderers and
+file.managed — file.decode receives `**********`, silently discards it as invalid
+base64, and writes an empty key (confirmed live against 3008.2). Committing a real
+key to git would be a red flag even in a lab, so the pillar file stays gitignored.
 
 ## MariaDB setup: idempotent SQL instead of Salt's mysql states
 
