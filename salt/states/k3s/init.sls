@@ -77,6 +77,9 @@ k3s-gateway-image-import:
   cmd.run:
     # -n k8s.io: ctr defaults to its own namespace, but kubelet/CRI only
     # sees images in k8s.io — without it the import lands where nothing looks.
+    # Requiring the k3s service is a real readiness guarantee, not a hope:
+    # k3s.service is Type=notify, so systemd reports it active only after the
+    # server (and its embedded containerd) signals ready.
     - name: /usr/local/bin/k3s ctr -n k8s.io images import {{ staged_tar }}
     - require:
       - service: k3s

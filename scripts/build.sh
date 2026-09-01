@@ -49,8 +49,10 @@ if ! $debs_current; then
 	apt-get update
 	apt-get install -y build-essential fakeroot devscripts equivs wget bzip2
 
+	# Reuse a cached tarball only if it is a readable archive; a truncated
+	# download would otherwise be reused forever.
 	tarball="slurm-${SLURM_VERSION}.tar.bz2"
-	[ -f "${src}/${tarball}" ] ||
+	tar -tjf "${src}/${tarball}" >/dev/null 2>&1 ||
 		wget -q -O "${src}/${tarball}" "https://download.schedmd.com/slurm/${tarball}"
 
 	# A half-extracted tree from a previous failed run would poison the build.

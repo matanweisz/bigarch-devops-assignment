@@ -1,4 +1,4 @@
-FROM docker.io/python:3.12-slim
+FROM docker.io/python:3.12.14-slim
 
 # Unbuffered so the Flask server's request log reaches kubectl logs immediately.
 ENV PYTHONUNBUFFERED=1 \

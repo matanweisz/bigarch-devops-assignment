@@ -71,6 +71,21 @@ targets_ok=0
 { [ "$total" -gt 0 ] && [ "$down" -eq 0 ]; } || targets_ok=1
 report "$targets_ok" "prometheus: ${total} targets, ${down} not up"
 
+# Grafana itself, through the real ingress. --resolve pins the TLS SNI name to
+# the compute IP so the check works before the reader edits /etc/hosts; -k
+# because Traefik answers with its self-signed default certificate.
+curl -ksf --max-time 10 --resolve "${GRAFANA_HOST}:443:${COMPUTE_IP}" \
+	"https://${GRAFANA_HOST}/api/health" >/dev/null 2>&1
+report $? "grafana: ingress answers on https://${GRAFANA_HOST}"
+
+# admin/admin is the documented lab login (README, known limitations).
+dashboards=$(curl -ksf --max-time 10 --resolve "${GRAFANA_HOST}:443:${COMPUTE_IP}" \
+	-u admin:admin "https://${GRAFANA_HOST}/api/search?type=dash-db" 2>/dev/null)
+for title in "Node Exporter Full" "Live Slurm Job Load"; do
+	printf '%s' "$dashboards" | grep -q "\"title\":\"${title}\""
+	report $? "grafana: dashboard \"${title}\" is loaded"
+done
+
 printf '\n'
 printf 'grafana: https://%s (admin/admin, Traefik self-signed certificate)\n' "$GRAFANA_HOST"
 printf 'needs this line in /etc/hosts on the host: %s %s\n' "$COMPUTE_IP" "$GRAFANA_HOST"

@@ -71,6 +71,8 @@ flowchart LR
 - Vagrant 2.4.x.
 - About 9GB of free RAM at peak. The builder (4GB) halts before the other two boot;
   controller (3GB) and compute (6GB) are the ones that stay up. Roughly 25GB of disk.
+- `rsync` and `openssl` on the host: the synced folders are rsync type, and the
+  secrets trigger generates the munge key with openssl before the first boot.
 - `curl` and GNU make on the host for `make verify`; `python3` for `make test`.
 
 Verified on Ubuntu amd64 with VirtualBox 7.2.6 and Vagrant 2.4.9, and earlier on macOS

@@ -4,8 +4,8 @@
 
 # BigArch HPC-DevOps Hybrid Orchestrator — Design Spec
 
-Date: 2026-08-31 · Status: approved by Matan · Location: `study/` (gitignored — the
-submitted repo carries only the deliverable; this spec is prep material).
+Date: 2026-08-31 · Status: approved by Matan · Location: `study/` (drafted as local
+prep material; later committed deliberately for process transparency).
 
 ## Goal
 

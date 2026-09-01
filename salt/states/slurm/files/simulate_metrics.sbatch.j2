@@ -21,15 +21,20 @@
 # are the assignment's mandated labels and need no export/lookup here.
 gateway_url="http://{{ net.compute_ip }}:{{ gateway.node_port }}/update-metric"
 
-# --max-time bounds a hung gateway; `|| true` absorbs a refused/failed
-# connection. Either way one missed sample must not fail the job — the loop
-# keeps going and the script still exits 0.
+# --max-time bounds a hung gateway, and a single missed sample must not fail
+# the job — the loop keeps going. Failures are counted rather than swallowed
+# outright: a run where not one PUT landed means the gateway was unreachable
+# the whole minute, and that surfaces as a FAILED job in sacct instead of a
+# COMPLETED job next to a silently empty panel.
+ok_count=0
 report() {
   local metric_name="$1" value="$2"
-  curl -sS --max-time {{ cron.curl_max_time }} -X PUT "$gateway_url" \
+  if curl -sS --max-time {{ cron.curl_max_time }} -X PUT "$gateway_url" \
     -H 'Content-Type: application/json' \
     -d "{\"name\":\"${metric_name}\",\"value\":${value},\"labels\":{\"slurm_job_id\":\"${SLURM_JOB_ID}\",\"node\":\"${SLURMD_NODENAME}\"}}" \
-    >/dev/null 2>&1 || true
+    >/dev/null 2>&1; then
+    ok_count=$((ok_count + 1))
+  fi
 }
 
 for i in $(seq 1 {{ cron.iterations }}); do
@@ -47,4 +52,5 @@ for i in $(seq 1 {{ cron.iterations }}); do
   sleep {{ cron.sleep_seconds }}
 done
 
+[ "$ok_count" -gt 0 ] || exit 1
 exit 0
