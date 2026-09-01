@@ -13,13 +13,6 @@
 include:
   - slurm.common
 
-# curl is not part of the base box image and nothing else in this repo
-# installs it; the sbatch script's whole job is PUTting to the gateway with
-# it.
-curl-package:
-  pkg.installed:
-    - name: curl
-
 {{ cron.install_dir }}:
   file.directory:
     - user: root
@@ -70,5 +63,4 @@ slurm-metrics-cron:
     - require:
       - file: {{ cron.install_dir }}/submit_job.sh
       - file: {{ cron.install_dir }}/simulate_metrics.sbatch
-      - pkg: curl-package
       - cmd: slurm-packages
