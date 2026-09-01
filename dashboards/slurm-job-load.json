@@ -201,10 +201,6 @@
               {
                 "id": "max",
                 "value": 100
-              },
-              {
-                "id": "displayName",
-                "value": "CPU % \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           },
@@ -225,10 +221,6 @@
               {
                 "id": "max",
                 "value": 100
-              },
-              {
-                "id": "displayName",
-                "value": "GPU % \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           },
@@ -245,10 +237,6 @@
               {
                 "id": "min",
                 "value": 0
-              },
-              {
-                "id": "displayName",
-                "value": "Mem MB \u2014 {{slurm_job_id}} / {{node}}"
               }
             ]
           }
