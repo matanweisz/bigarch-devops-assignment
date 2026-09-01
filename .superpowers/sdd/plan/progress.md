@@ -24,3 +24,6 @@ Task 9: complete (merged c80e4e0 + fact fixes 3290c81; shellcheck clean, make ve
 Final: clean-room proof passed 2026-09-01 (destroy -f, artifacts aside, one vagrant up: builder 17 DEBs, controller 35/0, compute 36/0, verify green, second highstates changed=0, cron loop live)
 Final: compliance audit round 1 (38/40; fixes: stat panel title "Live Slurm Job Load", gateway TTL 90s pillar->chart->env, artifacts:root pillar, anchored version grep, readme RAM/latest-slurm/targets facts, gitignore) applied to fresh lab, changed=0 after
 Final: in flight — prose pass agent, fresh-eyes re-verification agent, TTL expiry proof
+Final: prose pass merged (a2ccb67 via a88987a; 10 AI-tells fixed, 6 factual drifts corrected, decisions.md helm/k3s entries aligned with code), context docs aligned (CLAUDE.md RealMemory trap, historical headers on design/plan)
+Final: re-verification round applied and converged on live lab (artifacts:root everywhere, make test target 28/28 green, TTL expiry proven live 6->3 series); both nodes Failed: 0 changed=0, make verify 9/9 ok
+Final: all 40 assignment checks pass per fresh-eyes audit; remaining items are Matan's: screenshots, publish/push decision, tracked study+.superpowers+assignment untrack decision, main author-email rewrite
