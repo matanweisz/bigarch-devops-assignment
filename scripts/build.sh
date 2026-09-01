@@ -79,6 +79,9 @@ if ! $debs_current; then
 fi
 
 if ! $images_current; then
+	# podman save refuses to overwrite an existing docker-archive tar, so this
+	# directory is rebuilt the same way debs/ is above.
+	rm -rf "$artifacts/images"
 	mkdir -p "$artifacts/images"
 
 	podman build -t "$GATEWAY_IMAGE" /vagrant/gateway
