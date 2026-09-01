@@ -34,6 +34,21 @@ slurm:
     name: slurm_acct_db
     user: slurm
     innodb_buffer_pool_size: "256M"
+  # Phase 5: the cron-driven job that reports simulated CPU/GPU/Mem load to
+  # the gateway. minute is the only cron field pillar carries — the rest of
+  # the schedule is the literal "every 5 minutes" the assignment asks for,
+  # which isn't a value worth indirecting through pillar the way the interval
+  # itself is. time_limit/iterations/sleep_seconds must stay in the ~1-minute
+  # shape the assignment specifies (iterations * sleep_seconds ~= 60s, well
+  # under time_limit) if changed.
+  cron:
+    minute: "*/5"
+    job_name: metrics-sim
+    time_limit: "00:02:00"
+    iterations: 12
+    sleep_seconds: 5
+    curl_max_time: 3
+    install_dir: /opt/slurm
 
 munge:
   uid: 966

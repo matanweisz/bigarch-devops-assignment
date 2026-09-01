@@ -1,0 +1,10 @@
+#!/bin/bash
+# Managed by Salt: salt/states/slurm/files/submit_job.sh.j2
+#
+{%- set cron = salt['pillar.get']('slurm:cron') %}
+# cron runs jobs with a near-empty PATH, so every binary here is an absolute
+# path rather than relying on lookup. This wrapper only submits the job;
+# the metrics loop lives in simulate_metrics.sbatch, kept as its own file so
+# it can be run by hand (`sbatch {{ cron.install_dir }}/simulate_metrics.sbatch`)
+# for one-off testing without going through cron at all.
+/usr/bin/sbatch {{ cron.install_dir }}/simulate_metrics.sbatch
