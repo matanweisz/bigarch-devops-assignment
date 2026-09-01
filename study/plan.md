@@ -1,3 +1,7 @@
+> Historical implementation plan, frozen as written before implementation started.
+> Where it differs from the code or the README, the code and README are
+> authoritative; study/STATE.md records what actually changed and why.
+
 # BigArch HPC-DevOps lab — implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Every worker reads `CLAUDE.md` and `study/design.md` first; CLAUDE.md's "locked decisions" and "traps" sections are binding.

@@ -86,8 +86,10 @@ Forgetting any of these costs hours of debugging.
 - The `slurm` user must exist with the same UID on both nodes before the DEBs are
   installed, or state directories get the wrong owner.
 - `RealMemory` in slurm.conf must stay below what the kernel reports or the compute
-  node drains silently. It is derived from grains minus headroom. The node line also
-  carries `State=UNKNOWN` and `ReturnToService=2`.
+  node drains silently. It comes from pillar (`slurm:compute_real_memory`), not from
+  grains: slurm.conf must be byte-identical on every node, and the controller cannot
+  see compute's grains when it renders its own copy. The node line also carries
+  `State=UNKNOWN` and `ReturnToService=2`.
 - `ProctrackType=proctrack/cgroup` does nothing for resource limits without
   `TaskPlugin=task/cgroup,task/affinity`.
 - K3s must be started with `--node-ip 192.168.56.11` and a `--flannel-iface` naming the

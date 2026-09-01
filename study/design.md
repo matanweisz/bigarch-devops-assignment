@@ -1,3 +1,7 @@
+> Historical design spec, frozen as written before implementation started.
+> Where it differs from the code or the README, the code and README are
+> authoritative; study/STATE.md records what actually changed and why.
+
 # BigArch HPC-DevOps Hybrid Orchestrator — Design Spec
 
 Date: 2026-08-31 · Status: approved by Matan · Location: `study/` (gitignored — the

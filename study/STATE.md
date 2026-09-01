@@ -38,8 +38,8 @@ slurm_job_id and node labels.
 1. Screenshots: docs/grafana-node-exporter.png and docs/grafana-slurm-job-load.png
    are referenced by the README but not yet taken. Host /etc/hosts line
    `192.168.56.11 grafana.local`, then https://grafana.local, admin/admin.
-2. Publishing: main is far behind impl and impl is unpushed. Decide the shape of
-   the published history.
+2. Publishing: main is far behind impl, and local impl is well ahead of
+   origin/impl. Decide the shape of the published history, then push.
 3. History hygiene decisions, unchanged from the Mac snapshot: the two main
    commits carrying the ZoomInfo author email, and whether study/,
    .superpowers/, and bigarch-assignment.md stay in the published repo
