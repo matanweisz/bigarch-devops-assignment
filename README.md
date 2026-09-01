@@ -76,18 +76,19 @@ arm64. The box is `bento/ubuntu-24.04` at a pinned version, which publishes both
 architectures, so a reviewer on Intel rebuilds identical artifacts transparently.
 
 One trap worth knowing about on Linux hosts. On kernel 6.12 and later the in-tree KVM
-modules take the CPU's virtualization extensions and hold them, and VirtualBox then
-refuses to start any VM with `VERR_VMX_IN_VMX_ROOT_MODE`. Unload them before bringing
-the lab up:
+modules can claim the CPU's virtualization extensions at load time, and VirtualBox then
+refuses to start any VM with `VERR_VMX_IN_VMX_ROOT_MODE`. Whether the conflict actually
+bites depends on the kernel and VirtualBox build — on the machine this lab was verified
+on (kernel 7.0, VirtualBox 7.2.6) the two coexisted without issue. If you do hit that
+error, unload the modules and retry:
 
 ```sh
 sudo modprobe -r kvm_intel kvm     # kvm_amd on AMD hosts
 ```
 
-If something else on the machine keeps loading them back, blacklist them
-(`/etc/modprobe.d/`) or stop whatever pulls them in. This is a host-level conflict, not
-a Vagrant or VirtualBox misconfiguration, and no amount of retrying `vagrant up` gets
-past it.
+If something keeps loading them back, blacklist them in `/etc/modprobe.d/`. This is a
+host-level conflict, not a Vagrant or VirtualBox misconfiguration, and no amount of
+retrying `vagrant up` alone gets past it.
 
 ## Quick start
 
@@ -134,10 +135,10 @@ idle/alloc/mix, that both node exporters answer on port 9100, that a probe metri
 the gateway's NodePort comes back 204 and then shows up in its `/metrics` output, and
 that Prometheus reports zero targets in any state other than up.
 
-For reference, this is what a healthy lab looked like on the last full clean-room run,
+For reference, this is what a healthy lab looked like on the last full verification run,
 on an Ubuntu amd64 host: 17 Slurm 26.05.3 DEBs built on the builder, K3s v1.36.4+k3s1
 with the node Ready, kube-prometheus-stack 88.6.2 with every pod Running, and Prometheus
-reporting 14 targets with none down — including the `node-exporter` job scraping both
+reporting 15 targets with none down — including the `node-exporter` job scraping both
 `192.168.56.10:9100` and `192.168.56.11:9100`, and the gateway's own ServiceMonitor
 target. `srun` and `sbatch` round-trips reached COMPLETED and the gateway PUT returned
 204 with the series visible on the next scrape.
@@ -308,7 +309,7 @@ against what it should be, and phase boundaries were checked with a full
 fully provisioned lab:
 
 ```
-controller:  Succeeded: 32  Failed: 0      # no changed count, nothing changed
+controller:  Succeeded: 35  Failed: 0      # no changed count, nothing changed
 compute:     Succeeded: 36  Failed: 0
 ```
 
