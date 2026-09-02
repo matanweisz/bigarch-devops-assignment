@@ -75,7 +75,8 @@ everything compiles in-guest, so an Intel host builds matching amd64 artifacts u
 
 One trap on Linux hosts: if VirtualBox fails with `VERR_VMX_IN_VMX_ROOT_MODE`, the in-tree
 KVM modules hold the CPU's virtualization extensions. Run
-`sudo modprobe -r kvm_intel kvm` (`kvm_amd` on AMD) and retry.
+`sudo modprobe -r kvm_intel kvm` (`kvm_amd` on AMD) and retry. If something keeps
+loading them back, blacklist them in `/etc/modprobe.d/`.
 
 ## Quick start
 
@@ -91,7 +92,8 @@ repeated runs never rotate a live secret and no credential is committed.
 
 Expect roughly 25 minutes cold, plus a one-time 600MB box download. The builder is the
 long pole at about 14 minutes on a 16-thread host, nearly all of it compiling Slurm.
-Controller takes about 4 minutes, compute about 6.
+Controller takes about 4 minutes, compute about 6. A second `vagrant up` skips the
+compile through the version stamp and returns almost immediately.
 
 If provisioning dies partway, run `vagrant up` again. Every step is guarded: the builder
 resumes past what it finished, and a half-provisioned node converges on the next
@@ -134,7 +136,7 @@ the `node-exporter` job scraping both `192.168.56.10:9100` and `192.168.56.11:91
 the gateway's own ServiceMonitor target. `srun` and `sbatch` round-trips reached
 COMPLETED, and the gateway PUT returned 204 with the series visible on the next scrape.
 
-`make test` covers the gateway on the host, no VM needed. It builds a venv under `gateway/`
+`make test` covers the gateway on the host. No VM needed. It builds a venv under `gateway/`
 and runs 28 pytest cases over the PUT and scrape roundtrip, label-shape conflicts,
 malformed payloads, and the TTL expiry boundary.
 
@@ -269,8 +271,9 @@ root-only file and applying it over the unix socket needs no driver at all.
 reports `STATUS: deployed` *and* that a stamp file matches its current inputs, meaning the
 rendered values plus a hash of every chart file for the local one. A status check alone
 never notices a values, chart or version change. `onchanges` on the values file can never
-retry a failed first install, because that file is written once and stays unchanged, and
-combining the two inherits that flaw since Salt requires every gate to pass.
+retry a failed first install, because that file is written once and stays unchanged.
+Combining the two inherits that flaw. Salt requires every gate to pass before a state
+runs.
 
 **Dashboards are vendored and applied server-side.** Both are committed as JSON rather than
 fetched from grafana.com at pod start, so the deployment is reproducible offline. They go
@@ -355,4 +358,4 @@ Deliberate trade-offs for a lab. None would survive a review of a real deploymen
   Restarting the pod loses every series, and it cannot scale past one replica.
 - **Metrics expire.** A dashboard opened when no job ran in the last TTL window is empty,
   by design. Better than a flat line implying a job is still running.
-- **Synced folders are one-way.** Changes made inside a guest are not synced back.
+- **Synced folders are one-way.** Changes made inside a guest are not synced back. The next rsync overwrites them.
