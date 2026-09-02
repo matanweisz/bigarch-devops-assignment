@@ -21,7 +21,7 @@
 {#- Rendering has to stop here rather than pass an empty --flannel-iface, which
     installs a cluster on the wrong network that then has to be torn down. #}
 {%- if not iface.name %}
-{{ salt['test.exception']('no interface holds ' ~ compute_ip ~ '; set pillar k3s:flannel_iface') }}
+{{ salt['test.exception']('no interface holds ' ~ compute_ip ~ '. Set pillar k3s:flannel_iface') }}
 {%- endif %}
 
 # Both installers are curl-to-shell pipelines, and this may be the first state

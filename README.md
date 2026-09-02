@@ -63,8 +63,8 @@ are the working context, design notes and per-task execution log. See [AI use](#
 
 - Vagrant 2.4.x and VirtualBox 7.1 or 7.2. A `vmware_desktop` block is kept in the
   Vagrantfile, but VirtualBox is what this was verified on.
-- About 9GB of free RAM at peak and 25GB of disk. The builder (4GB) halts before the other
-  two boot, so only controller (3GB) and compute (6GB) stay up.
+- About 9GB of free RAM at peak and a budget of about 25GB of disk. The builder (4GB)
+  halts before the other two boot, so only controller (3GB) and compute (6GB) stay up.
 - `rsync` and `openssl` on the host. Synced folders are rsync type, and the secrets trigger
   generates the munge key with openssl before the first boot.
 - `curl` and GNU make for `make verify`, `python3` for `make test`.
@@ -91,7 +91,7 @@ munge key. That file is gitignored and the script is a no-op if it already exist
 repeated runs never rotate a live secret and no credential is committed.
 
 Expect roughly 25 minutes cold, plus a one-time 600MB box download. The builder is the
-long pole at about 14 minutes on a 16-thread host, nearly all of it compiling Slurm.
+long pole at about 14 minutes on this lab's 6 vCPU builder, nearly all of it compiling Slurm.
 Controller takes about 4 minutes, compute about 6. A second `vagrant up` skips the
 compile through the version stamp and returns almost immediately.
 
@@ -163,7 +163,7 @@ produces the separated `slurm-smd-*` packages. The gateway image is built with
 `podman build` and saved as a tar next to the node_exporter image.
 
 Everything lands in `/opt/artifacts`. A Vagrant trigger streams that directory to the host
-over `vagrant ssh builder -c 'sudo tar -cf -'` and powers the machine off, and the rsync
+over an SSH tar stream from the builder and powers the machine off, and the rsync
 synced folder carries it on into the other two guests. Two stamps gate the work:
 `BUILD_STAMP` for the DEBs, `IMAGE_STAMP` for the image tars including a content hash of
 `gateway/`, so editing gateway source rebuilds only the image and skips the 14-minute
@@ -358,4 +358,5 @@ Deliberate trade-offs for a lab. None would survive a review of a real deploymen
   Restarting the pod loses every series, and it cannot scale past one replica.
 - **Metrics expire.** A dashboard opened when no job ran in the last TTL window is empty,
   by design. Better than a flat line implying a job is still running.
-- **Synced folders are one-way.** Changes made inside a guest are not synced back. The next rsync overwrites them.
+- **Synced folders are one-way.** Changes made inside a guest are not synced back.
+  The next rsync overwrites them.

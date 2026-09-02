@@ -5,7 +5,7 @@ Where the project stands, for resuming in another session.
 ## Where we are
 
 All nine tasks of study/plan.md are implemented, reviewed, and live-verified on the
-Ubuntu amd64 laptop. The working branch is `impl`. The ledger in
+Ubuntu amd64 laptop. All work is merged to `main`. The ledger in
 `.superpowers/sdd/plan/progress.md` records every task, review round, and fix.
 
 The clean-room proof passed on 2026-09-01: `vagrant destroy -f`, artifacts moved

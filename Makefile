@@ -25,7 +25,7 @@ destroy:
 	vagrant destroy -f
 
 help:
-	@echo "up         boot the whole lab; the builder halts itself when done"
+	@echo "up         boot the whole lab, the builder halts itself when done"
 	@echo "verify     host-side smoke test of the running lab"
 	@echo "test       gateway unit tests in a local venv, no VM needed"
 	@echo "provision  rsync states to the guests and re-run both highstates"
