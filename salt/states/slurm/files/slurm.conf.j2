@@ -21,7 +21,7 @@ SlurmdSpoolDir=/var/spool/slurmd
 # Under /run/slurmctld, not /run: slurmctld drops to the slurm user and /run is
 # root-owned, so writing the pidfile at the top level fails on every start. The
 # packaged unit declares RuntimeDirectory=slurmctld for exactly this. slurmd
-# stays at the top of /run because it runs as root and can write there.
+# stays at the top of /run because it runs as root.
 SlurmctldPidFile=/run/slurmctld/slurmctld.pid
 SlurmdPidFile=/run/slurmd.pid
 
@@ -46,14 +46,13 @@ AccountingStorageType=accounting_storage/slurmdbd
 AccountingStorageHost={{ net['controller_ip'] }}
 
 # RealMemory has to stay under what the kernel reports on the compute node or
-# slurmctld drains it without ever scheduling anything, and the value cannot be
-# derived from grains because the controller renders this file too and would
-# then produce a different NodeName line than the compute node does. Pillar
-# carries one number, sized with headroom under the VM's memory.
+# slurmctld drains it without ever scheduling anything. It cannot come from
+# grains: the controller renders this file too and would produce a different
+# NodeName line. Pillar carries one number, sized with headroom.
 #
 # ReturnToService=2 lets a node that was down come back on its own after a
-# reboot; State=UNKNOWN lets slurmctld take whatever the node reports at
-# registration instead of insisting the node is down until someone resumes it.
+# reboot. State=UNKNOWN lets slurmctld take whatever the node reports at
+# registration instead of holding it down until someone resumes it.
 NodeName={{ net['compute_host'] }} NodeAddr={{ net['compute_ip'] }} CPUs={{ slurm['compute_cpus'] }} RealMemory={{ slurm['compute_real_memory'] }} State=UNKNOWN
 ReturnToService=2
 

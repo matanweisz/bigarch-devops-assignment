@@ -3,18 +3,17 @@
 #
 # Produces /opt/artifacts: Slurm DEBs built the official Debian way, plus the
 # gateway and node_exporter images saved as tars for the other two nodes to
-# load. A Vagrant trigger then pulls the whole directory back to the host.
+# load. A Vagrant trigger pulls the directory back to the host.
 #
-# Two independent stamps so the expensive Slurm compile is not repeated when
-# only an image changed: BUILD_STAMP covers the DEBs (Slurm version + arch),
-# IMAGE_STAMP covers the image tars (both tags plus a content hash of
-# gateway/, so editing the gateway source rebuilds its image without a tag
-# bump). `--check` exits 0 when everything is current; the Salt state uses it
-# as its guard so the skip logic lives in exactly one place.
+# Two independent stamps, so an image change does not repeat the expensive Slurm
+# compile. BUILD_STAMP covers the DEBs (Slurm version and arch). IMAGE_STAMP
+# covers the image tars: both tags plus a content hash of gateway/, so editing
+# the gateway source rebuilds its image without a tag bump. `--check` exits 0
+# when everything is current, and the Salt state uses it as its guard.
 set -euo pipefail
 
 # Every tunable comes from pillar via the state's env block. Fail loudly rather
-# than silently building a different version than the cluster expects.
+# than build a different version than the cluster expects.
 : "${SLURM_VERSION:?set by salt/states/build/init.sls from pillar}"
 : "${GATEWAY_IMAGE:?set by salt/states/build/init.sls from pillar}"
 : "${NODE_EXPORTER_IMAGE:?set by salt/states/build/init.sls from pillar}"
@@ -49,7 +48,7 @@ if ! $debs_current; then
 	apt-get update
 	apt-get install -y build-essential fakeroot devscripts equivs wget bzip2
 
-	# Reuse a cached tarball only if it is a readable archive; a truncated
+	# Reuse a cached tarball only if it is a readable archive. A truncated
 	# download would otherwise be reused forever.
 	tarball="slurm-${SLURM_VERSION}.tar.bz2"
 	tar -tjf "${src}/${tarball}" >/dev/null 2>&1 ||
@@ -60,13 +59,13 @@ if ! $debs_current; then
 	tar -xjf "${src}/${tarball}" -C "$src"
 	cd "${src}/slurm-${SLURM_VERSION}"
 
-	# SchedMD ships debian/ in the tarball. Reading the build deps out of its own
-	# control file beats maintaining a parallel package list that rots on every bump.
+	# SchedMD ships debian/ in the tarball. Reading the build deps from its own
+	# control file beats a parallel package list that rots on every bump.
 	mk-build-deps -i debian/control -t 'apt-get -y'
 
 	# -b binary only, -uc -us unsigned: a lab has no signing key. --no-lintian
-	# because lintian exits non-zero on packaging style warnings we do not control,
-	# which would throw away the whole compile over nits.
+	# because lintian exits non-zero on packaging style warnings we do not
+	# control, which would throw away the whole compile.
 	DEB_BUILD_OPTIONS="parallel=$(nproc)" debuild --no-lintian -b -uc -us
 
 	# Rebuild the directory rather than adding to it, so a version bump cannot
@@ -75,8 +74,9 @@ if ! $debs_current; then
 	mkdir -p "$artifacts/debs"
 	cp "${src}"/slurm-smd*.deb "$artifacts/debs/"
 
-	# Written after its section succeeds; the controller/compute preconditions
-	# key on this file existing at all, so it must never appear early.
+	# Written only after this section succeeds. The controller and compute
+	# preconditions key on the file existing at all, so it must never appear
+	# early.
 	echo "$deb_stamp" >"$artifacts/BUILD_STAMP"
 fi
 

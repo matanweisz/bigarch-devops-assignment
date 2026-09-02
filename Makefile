@@ -7,15 +7,14 @@ up:
 verify:
 	scripts/verify.sh
 
-# Host-side unit tests for the metrics gateway; no VM needed.
+# Host-side unit tests for the metrics gateway. No VM needed.
 test:
 	cd gateway && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt pytest && .venv/bin/pytest -q
 
-# For iterating on Salt states. Synced folders are rsync, which only syncs on
-# up/reload, so the states have to be pushed before a highstate can see them.
-# The controller runs only its "highstate" shell provisioner here: re-running its
-# salt provisioner would reinstall the master for nothing. Compute has a single
-# provisioner and it already ends in a highstate.
+# For iterating on Salt states. Rsync folders only sync on up and reload, so
+# states have to be pushed before a highstate can see them. The controller runs
+# only its "highstate" shell provisioner, because re-running its salt
+# provisioner would reinstall the master for nothing.
 provision:
 	vagrant rsync controller
 	vagrant rsync compute

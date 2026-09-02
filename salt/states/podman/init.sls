@@ -3,8 +3,8 @@
 
 podman:
   pkg.installed:
-    # First apt-touching state on the builder; same stale-index reasoning as the
-    # munge and mariadb installs, applied consistently.
+    # First apt-touching state on the builder. Same stale-index reasoning as
+    # the munge and mariadb installs.
     - refresh: True
 
 # Quadlet drop-in directory. systemd's generator only reads it if it exists, and

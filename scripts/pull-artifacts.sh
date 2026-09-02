@@ -2,9 +2,9 @@
 # Host side. Fired by the builder's `after :up` trigger: streams /opt/artifacts
 # out of the ephemeral builder over SSH into ./artifacts, then powers it off.
 #
-# This is a script rather than an inline trigger because Vagrant Shellwords-splits
-# an inline host command and execs it without a shell, so `>` would be passed to
-# tar as a literal argument.
+# A script rather than an inline trigger: Vagrant Shellwords-splits an inline
+# host command and execs it without a shell, so `>` would reach tar as a literal
+# argument.
 set -eu
 
 cd "$(dirname "$0")/.."
@@ -12,35 +12,32 @@ cd "$(dirname "$0")/.."
 tarball=$(mktemp "${TMPDIR:-/tmp}/bigarch-artifacts.XXXXXX")
 trap 'rm -f "$tarball"' EXIT
 
-# -- -T forces ssh not to allocate a pty; with one, the terminal driver mangles
+# -- -T forces ssh not to allocate a pty. With one, the terminal driver mangles
 # CR/LF in the binary tar stream and the archive arrives corrupt.
 vagrant ssh builder -c 'sudo tar -C /opt/artifacts -cf - .' -- -T >"$tarball"
 
-# Never unpack a stream that has not been proved to be a tar. A failed remote
-# command would otherwise leave a half-written artifacts/ that the controller's
-# precondition would happily accept.
+# Never unpack a stream not proved to be a tar. A failed remote command would
+# leave a half-written artifacts/ that the controller's precondition accepts.
 tar -tf "$tarball" >/dev/null
 
-# Replace, never merge. Clearing /opt/artifacts guest-side does nothing for the
-# host copy, so after a slurm:version bump an extract-in-place would leave the
-# old DEBs sitting next to the new ones and the glob the slurm state installs
-# from would match two versions.
+# Replace, never merge. Clearing /opt/artifacts guest-side does nothing to the
+# host copy, so after a slurm:version bump an extract-in-place would leave old
+# DEBs beside the new ones and the slurm state's install glob would match two.
 rm -rf artifacts
 mkdir artifacts
 tar -xf "$tarball" -C artifacts
 
-# The builder has done its job; it exists only to compile.
-#
 # `vagrant halt builder` cannot be used here: the up action still holds this
 # machine's lock while its own after-up trigger runs, so the nested halt is
-# refused. Powering off from inside the guest sidesteps the lock entirely.
-# --no-block so systemd returns before it tears down sshd, and `|| true` because
-# it can still lose the connection on the way out; under `set -e` that would
-# fail the trigger after a perfectly good pull. The poll below is the real check.
+# refused. Powering off from inside the guest sidesteps the lock.
+#
+# --no-block so systemd returns before it tears down sshd. `|| true` because the
+# connection can still drop on the way out, which under `set -e` would fail the
+# trigger after a perfectly good pull. The poll below is the real check.
 vagrant ssh builder -c 'sudo systemctl poweroff --no-block' -- -T || true
 
 # Wait for the box to be genuinely down, so `vagrant status` is deterministic
-# for whatever runs straight after `vagrant up`.
+# for whatever runs after `vagrant up`.
 waited=0
 while vagrant status builder --machine-readable | grep -q ',state,running'; do
 	if [ "$waited" -ge 60 ]; then

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Host-side smoke test for the whole lab. Run after `vagrant up`, or `make verify`.
-# Every check prints one greppable ok/FAIL line; any FAIL makes the script exit 1.
+# Every check prints one greppable ok/FAIL line. Any FAIL makes the script exit 1.
 #
 # Deliberately not `set -e`: one broken piece must not hide the state of the rest.
 set -uo pipefail
@@ -62,7 +62,7 @@ report $? "gateway: /metrics exposes ${probe}"
 prom_ip=$(vagrant ssh compute -c \
 	"KUBECONFIG=${KUBECONFIG_PATH} kubectl -n ${NAMESPACE} get svc ${PROM_SVC} -o jsonpath='{.spec.clusterIP}'" \
 	2>/dev/null | tr -d '\r')
-# 9090 is Prometheus's default port; not configured anywhere in this repo.
+# 9090 is Prometheus's default port, not configured anywhere in this repo.
 health=$(vagrant ssh compute -c "curl -s --max-time 10 http://${prom_ip}:9090/api/v1/targets" \
 	2>/dev/null | grep -o '"health":"[a-z]*"')
 total=$(printf '%s\n' "$health" | grep -c '"health"')
@@ -71,9 +71,9 @@ targets_ok=0
 { [ "$total" -gt 0 ] && [ "$down" -eq 0 ]; } || targets_ok=1
 report "$targets_ok" "prometheus: ${total} targets, ${down} not up"
 
-# Grafana itself, through the real ingress. --resolve pins the TLS SNI name to
-# the compute IP so the check works before the reader edits /etc/hosts; -k
-# because Traefik answers with its self-signed default certificate.
+# Grafana through the real ingress. --resolve pins the TLS SNI name to the
+# compute IP so the check works before the reader edits /etc/hosts. -k because
+# Traefik answers with its self-signed default certificate.
 curl -ksf --max-time 10 --resolve "${GRAFANA_HOST}:443:${COMPUTE_IP}" \
 	"https://${GRAFANA_HOST}/api/health" >/dev/null 2>&1
 report $? "grafana: ingress answers on https://${GRAFANA_HOST}"

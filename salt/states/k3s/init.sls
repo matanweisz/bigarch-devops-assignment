@@ -1,5 +1,5 @@
 # Compute-only. Single-node K3s, the gateway image, and the two client binaries
-# the monitoring state drives. Nothing is deployed into the cluster here - that
+# the monitoring state drives. Nothing is deployed into the cluster here. That
 # is monitoring/init.sls, which requires the service below.
 
 {% set k3s = salt['pillar.get']('k3s') %}
@@ -10,8 +10,8 @@
 
 {#- The private NIC is eth1 on VirtualBox but not on every provider or box, and
     naming it wrong sends the whole cluster onto the NAT link. Derive it from
-    whichever interface actually holds the address the cluster must serve on,
-    and let pillar override when a lab needs a specific one. #}
+    whichever interface holds the address the cluster must serve on, and let
+    pillar override when a lab needs a specific one. #}
 {% set iface = namespace(name=k3s.flannel_iface) %}
 {%- if not iface.name %}
 {%- for name, addresses in grains['ip4_interfaces'].items() %}
@@ -25,7 +25,7 @@
 {%- endif %}
 
 # Both installers are curl-to-shell pipelines, and this may be the first state
-# to touch apt on a box whose package lists have never been fetched.
+# to touch apt on a box whose package lists were never fetched.
 curl:
   pkg.installed:
     - refresh: True
@@ -36,8 +36,8 @@ curl:
     - mode: '0755'
 
 # Staged before the installer so a first boot imports it while the agent starts.
-# That covers the install path only: a rebuilt tar reaching an already-running
-# containerd is the import state further down.
+# A rebuilt tar reaching an already-running containerd is the import state
+# further down.
 k3s-gateway-image:
   file.managed:
     - name: {{ staged_tar }}
@@ -69,17 +69,16 @@ k3s:
     - require:
       - cmd: k3s-install
 
-# The builder rebuilds this tar whenever the gateway changes, and containerd
-# does not re-read the images directory on its own once it is running. Importing
-# on change is how a rebuilt image actually reaches the cluster; the rollout that
-# picks it up is in monitoring/init.sls.
+# Containerd does not re-read the images directory once it is running, so
+# importing on change is how a rebuilt image reaches the cluster. The rollout
+# that picks it up is in monitoring/init.sls.
 k3s-gateway-image-import:
   cmd.run:
-    # -n k8s.io: ctr defaults to its own namespace, but kubelet/CRI only
-    # sees images in k8s.io — without it the import lands where nothing looks.
-    # Requiring the k3s service is a real readiness guarantee, not a hope:
-    # k3s.service is Type=notify, so systemd reports it active only after the
-    # server (and its embedded containerd) signals ready.
+    # -n k8s.io: ctr defaults to its own namespace, but kubelet and CRI only
+    # see images in k8s.io, so without it the import lands where nothing looks.
+    # Requiring the k3s service is a real readiness guarantee: k3s.service is
+    # Type=notify, so systemd reports it active only once the server and its
+    # embedded containerd signal ready.
     - name: /usr/local/bin/k3s ctr -n k8s.io images import {{ staged_tar }}
     - require:
       - service: k3s
@@ -88,7 +87,7 @@ k3s-gateway-image-import:
 
 helm-install:
   cmd.run:
-    # get-helm-3 needs bash; DESIRED_VERSION stops it resolving the latest
+    # get-helm-3 needs bash. DESIRED_VERSION stops it resolving the latest
     # release at install time.
     - name: curl -sfL {{ helm.install_url }} | bash
     - env:

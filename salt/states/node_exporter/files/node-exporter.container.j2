@@ -2,9 +2,9 @@
 # Managed by Salt: salt/states/node_exporter/files/node-exporter.container.j2
 #
 # A Quadlet unit: systemd's podman generator turns this file into
-# node-exporter.service at daemon-reload. Declaring the container instead of
-# running one from a cmd.run is what keeps a second highstate from starting a
-# second container.
+# node-exporter.service at daemon-reload. Declaring the container rather than
+# running one from cmd.run is what keeps a second highstate from starting a
+# duplicate.
 
 [Unit]
 Description=Prometheus node exporter
@@ -21,7 +21,7 @@ Network=host
 # container's own handful of processes instead of the node's. Quadlet has no
 # key for it, so it goes through as a raw podman argument.
 PodmanArgs=--pid=host
-# The exporter reads the host's /proc, /sys and mount table through this bind;
+# The exporter reads the host's /proc, /sys and mount table through this bind.
 # --path.rootfs makes it prefix them.
 Volume=/:/host:ro,rslave
 Exec=--path.rootfs=/host --web.listen-address=:{{ ne['port'] }}

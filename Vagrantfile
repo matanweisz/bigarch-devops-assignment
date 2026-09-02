@@ -3,15 +3,12 @@
 
 require "yaml"
 
-# Salt pillar is the source of truth for every value a guest reads. The
-# Vagrantfile parses that same file instead of restating the addresses, so the
-# host-side network config cannot drift from what the states configure in-guest.
-# This parse is why common.sls must stay plain YAML: no Jinja, ever.
+# Parsing pillar here keeps the host-side network config from drifting. It is
+# also why common.sls must stay plain YAML. No Jinja, ever.
 PILLAR = YAML.load_file(File.expand_path("salt/pillar/common.sls", __dir__))
 
-# RAM and CPU are host-side sizing that no state reads, so they live here. The
-# builder's address does too: it is ephemeral and nothing in-guest addresses it,
-# which is why pillar carries only the controller and compute addresses.
+# RAM and CPU are host-side sizing no state reads. The builder's address lives
+# here too, because it is ephemeral and nothing in-guest addresses it.
 NODES = {
   "builder"    => { ip: "192.168.56.5",                 cpus: 6, memory: 4096 },
   "controller" => { ip: PILLAR["net"]["controller_ip"], cpus: 2, memory: 3072 },
@@ -19,22 +16,19 @@ NODES = {
 }.freeze
 
 BOX = "bento/ubuntu-24.04".freeze
-# Pinned: an unpinned box makes "works on my machine" unfalsifiable, and this
-# version is the one the whole build was verified against on arm64 and amd64.
+# Pinned. This is the version the build was verified against on arm64 and amd64.
 BOX_VERSION = "202510.26.0".freeze
 
-# Salt 3008 LTS. The salt provisioner appends install_type and install_args to
-# the salt-bootstrap command line verbatim, which is exactly where that project
-# expects its positional `stable <major>` selector.
+# Salt 3008 LTS. The provisioner appends install_type and install_args verbatim
+# to the salt-bootstrap command line, where it expects `stable <major>`.
 SALT_INSTALL_TYPE = "stable".freeze
 SALT_INSTALL_ARGS = "3008".freeze
-# Vagrant defaults salt-call to --log-level=debug, which buries every state
-# result under loader chatter.
+# Vagrant defaults salt-call to --log-level=debug, which buries state results.
 SALT_LOG_LEVEL = "info".freeze
 
 BUILD_STAMP = File.expand_path("artifacts/BUILD_STAMP", __dir__).freeze
 
-# Checkout noise no guest needs. Excluding it keeps every up/rsync cheap; the
+# Checkout noise no guest needs, excluded to keep every up and rsync cheap. The
 # builder additionally excludes artifacts/ because it produces them.
 RSYNC_EXCLUDE = [
   ".git/", ".superpowers/", ".claude/", "study/",
@@ -42,7 +36,7 @@ RSYNC_EXCLUDE = [
 ].freeze
 
 # Settings identical on every node: address, the one-way repo share, and the two
-# provider sizings. Synced folders are rsync everywhere on purpose - see
+# provider sizings. Synced folders are rsync everywhere on purpose. See
 # CLAUDE.md decision 4 for why NFS is off the table on macOS.
 def base_config(vm, name, excludes)
   node = NODES.fetch(name)
@@ -61,21 +55,18 @@ def base_config(vm, name, excludes)
   end
 end
 
-# Controller and compute install the DEBs and container images the builder
-# produced. Without them provisioning dies deep inside a Salt state with an
-# unhelpful message, so fail before the box even boots and name the fix.
-#
-# Both :up and :provision: `vagrant up` on a never-created machine is the path
-# users actually take, and whether it fires the nested :provision trigger is
-# version-dependent. Gating :up too makes the check fire before the box import.
+# Controller and compute install what the builder produced. Without it,
+# provisioning dies deep inside a Salt state with an unhelpful message, so fail
+# before the box boots and name the fix. Gating :up as well as :provision makes
+# the check fire before the box import, since whether `vagrant up` on a
+# never-created machine fires the nested :provision trigger is version-dependent.
 def require_artifacts(node)
   node.trigger.before [:up, :provision] do |t|
     t.name = "require builder artifacts"
     t.ruby do |_env, _machine|
       next if File.exist?(BUILD_STAMP)
 
-      # abort, not raise: nothing has happened yet that needs unwinding, and a
-      # bare raise here makes Vagrant print a Ruby backtrace over the message.
+      # abort, not raise: a bare raise prints a Ruby backtrace over the message.
       abort "artifacts/BUILD_STAMP is missing: the builder has not produced " \
             "the Slurm DEBs and container images yet. Run `vagrant up builder` first."
     end
@@ -86,21 +77,21 @@ Vagrant.configure("2") do |config|
   config.vm.box = BOX
   config.vm.box_version = BOX_VERSION
 
-  # Pillar carries the slurmdbd password and the munge key. Generated once on the
-  # host so every node gets identical values; the script is a no-op if they exist.
+  # Pillar carries the slurmdbd password and the munge key. Generated once on
+  # the host so every node gets identical values. A no-op if they already exist.
   config.trigger.before :up do |t|
     t.name = "generate pillar secrets"
     t.run = { path: "scripts/gen-secrets.sh" }
   end
 
-  # Definition order is boot order, and it is also the dependency order: the
+  # Definition order is boot order, which is also the dependency order. The
   # builder must produce artifacts before the other two can be provisioned.
   config.vm.define "builder" do |builder|
     base_config(builder.vm, "builder", RSYNC_EXCLUDE + ["artifacts/"])
 
-    # Masterless: the builder is thrown away, so standing up key exchange with
-    # the controller's master would buy nothing. It applies the same podman sls
-    # the controller does, which is the point of the no-duplication criterion.
+    # Masterless: the builder is thrown away, so key exchange with the
+    # controller's master would buy nothing. It applies the same podman sls the
+    # controller does, which is the point of the no-duplication criterion.
     builder.vm.provision :salt do |salt|
       salt.masterless = true
       salt.minion_id = "builder"
@@ -126,14 +117,13 @@ Vagrant.configure("2") do |config|
     base_config(controller.vm, "controller", RSYNC_EXCLUDE)
     require_artifacts(controller)
 
-    # The .conf suffixes on the config files matter: the salt provisioner treats
-    # bare salt/master and salt/minion as optimistic defaults and would upload
-    # them to nodes that must not have them.
+    # The .conf suffixes matter: the provisioner treats bare salt/master and
+    # salt/minion as defaults and uploads them to nodes that must not have them.
     #
-    # install_master with run_highstate is refused by Vagrant unless minion keys
-    # are pre-seeded, and its master-mode highstate does not propagate state
-    # failures anyway. Hence run_highstate false plus the shell step below.
-    # See CLAUDE.md decision 2.
+    # Vagrant refuses install_master together with run_highstate unless minion
+    # keys are pre-seeded, and its master-mode highstate swallows state failures
+    # anyway. Hence run_highstate false plus the shell step below. See CLAUDE.md
+    # decision 2.
     controller.vm.provision :salt do |salt|
       salt.install_master = true
       salt.master_config = "salt/master.conf"

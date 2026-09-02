@@ -1,5 +1,5 @@
-# Controller only. The assignment puts a Podman-run node exporter on this node;
-# the compute node's :9100 comes from the kube-prometheus-stack DaemonSet
+# Controller only. The assignment puts a Podman-run node exporter on this node.
+# The compute node's :9100 comes from the kube-prometheus-stack DaemonSet
 # instead, and Prometheus scrapes both by address.
 
 {% set image = salt['pillar.get']('node_exporter:image') %}
@@ -8,9 +8,8 @@ include:
   - podman
 
 # The image was pulled and saved on the builder, so nothing here reaches the
-# network. `podman image exists` is the guard because a second `podman load`
-# would succeed and change nothing, which the state output would still report as
-# a change on every run.
+# network. `podman image exists` guards it because a second `podman load` would
+# succeed, change nothing, and still be reported as a change on every run.
 node-exporter-image:
   cmd.run:
     - name: podman load -i {{ salt['pillar.get']('artifacts:root') }}/images/node-exporter.tar
@@ -37,10 +36,10 @@ node-exporter-daemon-reload:
     - onchanges:
       - file: /etc/containers/systemd/node-exporter.container
 
-# No enable: True. systemctl cannot enable a generated unit, and asking it to is
-# a hard failure; the [Install] section in the .container file starts the exporter
-# at boot. Running the service is declarative, so a re-run finds it already up and
-# leaves the container alone instead of starting a second one.
+# No enable: True. systemctl cannot enable a generated unit and fails hard if
+# asked. The [Install] section in the .container file is what starts the exporter
+# at boot. service.running is declarative, so a re-run leaves a healthy container
+# alone instead of starting a second one.
 node-exporter:
   service.running:
     - require:
