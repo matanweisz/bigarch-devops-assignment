@@ -5,7 +5,7 @@
 {%- set gateway = salt['pillar.get']('gateway') %}
 {%- set mon = salt['pillar.get']('monitoring') %}
 {#- Pillar carries one image reference so nothing can pin a repository against
-    the wrong tag; the chart wants the two halves separately. -#}
+    the wrong tag. The chart wants the two halves separately. -#}
 {%- set image = gateway.image.rsplit(':', 1) %}
 
 image:

@@ -1,15 +1,14 @@
 # Compute only: the daemon that actually runs jobs. Users, host entries, the
 # DEB install for this role's package set, slurm.conf and cgroup.conf all come
-# from slurm/common.sls — nothing here duplicates that.
+# from slurm/common.sls. Nothing here duplicates that.
 
 include:
   - munge
   - slurm.common
 
-# slurmd writes SlurmdLogFile under here (from slurm.conf.j2) and needs the
-# directory to exist with slurm ownership before it can start; slurm/common.sls
-# creates it but does not order slurmd after it. Ownership is asserted here for
-# the same reason controller.sls asserts it on /var/spool/slurmctld.
+# slurmd's SlurmdSpoolDir, from slurm.conf.j2. It has to exist with slurm
+# ownership before slurmd can start. Asserted here for the same reason
+# controller.sls asserts ownership on /var/spool/slurmctld.
 /var/spool/slurmd:
   file.directory:
     - user: slurm

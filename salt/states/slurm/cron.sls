@@ -1,12 +1,11 @@
-# Controller only: the Phase 5 loop. Every five minutes root's crontab
-# submits a short Slurm job that reports simulated CPU/GPU/Mem load to the
-# metrics gateway on the compute node, giving the "Live Slurm Job Load"
-# dashboard real series to show.
+# Controller only: the Phase 5 loop. Every five minutes root's crontab submits
+# a short Slurm job that reports simulated CPU/GPU/Mem load to the metrics
+# gateway, feeding the "Live Slurm Job Load" dashboard.
 #
-# The job is submitted here because sbatch and slurmctld live on the
-# controller; slurmd always executes it on the compute node, which is the
-# only reading of "running a Slurm job on the Controller node" consistent
-# with the Phase 1 role split (controller has no slurmd).
+# Submitted here because sbatch and slurmctld live on the controller. slurmd
+# always executes it on the compute node, which is the only reading of "running
+# a Slurm job on the Controller node" consistent with the Phase 1 role split
+# (controller has no slurmd).
 
 {% set cron = salt['pillar.get']('slurm:cron') %}
 
@@ -27,9 +26,9 @@ include:
     - template: jinja
     - user: root
     - group: root
-    # Readable is all sbatch needs on the submission host: it ships the
-    # script's contents to slurmd, which writes its own executable copy into
-    # the job's spool directory on the execution node.
+    # Readable is all sbatch needs on the submission host: it ships the script's
+    # contents to slurmd, which writes its own executable copy on the execution
+    # node.
     - mode: '0644'
     - require:
       - file: {{ cron.install_dir }}
@@ -48,8 +47,7 @@ include:
 
 # identifier pins this to one crontab line across highstates. Without it Salt
 # matches an existing entry by its exact command text, so a pillar-driven
-# schedule change would add a second line instead of replacing the first —
-# exactly the duplication the idempotency proof must not show.
+# schedule change would add a second line instead of replacing the first.
 slurm-metrics-cron:
   cron.present:
     - name: {{ cron.install_dir }}/submit_job.sh

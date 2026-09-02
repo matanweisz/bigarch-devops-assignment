@@ -15,8 +15,8 @@ TTL = float(os.environ.get("METRIC_TTL_SECONDS", "300"))
 # memory on purpose: a scrape target that outlives the job it reports is worse
 # than one that forgets.
 series = {}
-# name -> label name set. A metric may not change its label names mid-flight;
-# never pruned, so the first shape a name is seen with wins for the process life.
+# name -> label name set. A metric may not change its label names mid-flight.
+# Never pruned, so the first shape a name is seen with wins for the process life.
 label_names = {}
 
 # Indirected so tests can drive the clock.
@@ -45,7 +45,7 @@ class StoreCollector:
         deadline = now() - TTL
         by_name = {}
         # The builtin server is threaded, so a PUT can land mid-scrape. Both the
-        # prune and the read walk one snapshot; the live dict is never iterated.
+        # prune and the read walk one snapshot. The live dict is never iterated.
         for key, (value, labels, updated) in list(series.items()):
             if updated < deadline:
                 series.pop(key, None)

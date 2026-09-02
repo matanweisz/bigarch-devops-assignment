@@ -1,8 +1,8 @@
 {#- Rendered to {{ salt['pillar.get']('monitoring:workdir') }}/kps-values.yaml by
-    salt/states/monitoring/init.sls. Every value below comes from pillar; the
-    state passes this file to `helm upgrade --install` and re-runs the upgrade
-    whenever its content changes. Key paths verified against
-    kube-prometheus-stack {{ salt['pillar.get']('monitoring:kps_version') }}. -#}
+    salt/states/monitoring/init.sls. Every value below comes from pillar, and the
+    state re-runs `helm upgrade --install` whenever this file's content changes.
+    Key paths verified against kube-prometheus-stack
+    {{ salt['pillar.get']('monitoring:kps_version') }}. -#}
 {%- set net = salt['pillar.get']('net') %}
 {%- set mon = salt['pillar.get']('monitoring') %}
 {%- set grafana = salt['pillar.get']('grafana') %}
@@ -26,9 +26,9 @@ grafana:
 
   sidecar:
     dashboards:
-      # The vendored dashboards are delivered as labelled ConfigMaps, so the
-      # sidecar is the only import path. Stated explicitly rather than relying
-      # on the chart default staying true.
+      # The vendored dashboards arrive as labelled ConfigMaps, so the sidecar
+      # is the only import path. Set explicitly rather than trusting the chart
+      # default to stay true.
       enabled: true
       label: {{ mon.dashboard_label }}
       labelValue: "{{ mon.dashboard_label_value }}"
@@ -50,8 +50,7 @@ prometheus-node-exporter:
     monitor:
       # The DaemonSet stays and keeps serving the compute node's exporter port.
       # Its ServiceMonitor is off because additionalScrapeConfigs below already
-      # scrapes that endpoint by address, and two paths to the same target
-      # double every series.
+      # scrapes that endpoint by address, and two paths double every series.
       enabled: false
 
 prometheus:

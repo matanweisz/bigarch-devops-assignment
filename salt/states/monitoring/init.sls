@@ -1,28 +1,27 @@
 # Compute-only. Everything that runs inside K3s: kube-prometheus-stack, the
 # vendored Grafana dashboards, and the metrics gateway chart.
 #
-# Both Helm releases are managed identically, and the guard on each is a single
-# `unless` comparing what is deployed against a stamp written only after a
-# successful release. The obvious alternatives do not hold up:
+# Both Helm releases are guarded the same way: one `unless` comparing what is
+# deployed against a stamp written only after a successful release. The obvious
+# alternatives do not hold up:
 #
 #   - `onchanges` on the values file alone cannot retry a failed install. The
-#     file is written once; if helm then fails, every later highstate sees an
+#     file is written once, so if helm then fails, every later highstate sees an
 #     unchanged file, keeps the gate shut, and the release stays broken.
-#   - `unless: helm status ... deployed` alone retries that failure, but never
+#   - `unless: helm status ... deployed` alone retries that failure but never
 #     notices a values, chart or version change.
 #   - Both together inherit the first problem, because Salt requires every gate
 #     to pass before a state runs.
 #
-# The stamp carries the release's whole identity - rendered values, and for the
-# local chart its file hashes - so the guard is false on a first run, false
-# after a failed install, false after any input changes, and true only on a
-# clean re-run.
+# The stamp carries the release's whole identity, rendered values plus file
+# hashes for the local chart, so the guard is false on a first run, false after
+# a failed install, false after any input change, and true only on a clean
+# re-run.
 #
 # The environment travels inline in the two command prefixes below rather than
 # through `env:`, so a guard runs with exactly the environment its command does.
-# A guard that silently loses KUBECONFIG fails, which reads as "not deployed"
-# and re-runs helm on every highstate - an idempotency break that nothing in the
-# output would point at.
+# A guard that lost KUBECONFIG would fail, read as "not deployed", and re-run
+# helm on every highstate, with nothing in the output pointing at why.
 
 include:
   - k3s
@@ -31,11 +30,10 @@ include:
 {% set gateway = salt['pillar.get']('gateway') %}
 {% set kubeconfig = salt['pillar.get']('k3s:kubeconfig') %}
 
-{# HOME is set because helm derives its repository and cache paths from it and
-   Salt does not set one unless a state uses runas. Left to the minion's own
-   environment, the repository list would land in a different directory
-   depending on whether the highstate came from salt-call or from the master,
-   and the repo guard below would stop being idempotent. #}
+{# helm derives its repository and cache paths from HOME, and Salt sets no HOME
+   unless a state uses runas. Without it the repository list lands in a different
+   directory depending on whether the highstate came from salt-call or from the
+   master, and the repo guard below stops being idempotent. #}
 {% set env = 'HOME=/root KUBECONFIG=' ~ kubeconfig %}
 {% set helm = env ~ ' /usr/local/bin/helm' %}
 {% set kubectl = env ~ ' /usr/local/bin/kubectl' %}
@@ -45,17 +43,17 @@ include:
 
 {#- An interrupted highstate leaves a release in pending-install or
     pending-upgrade, which helm refuses to touch again ("another operation is in
-    progress") until it is cleared. Both releases start by clearing that state
-    so a re-run recovers instead of needing a manual uninstall. #}
-{#- Both macros must expand to a single line: they are used inside folded YAML
+    progress") until it is cleared. Both releases start by clearing it so a
+    re-run recovers instead of needing a manual uninstall. #}
+{#- Both macros must expand to a single line: they sit inside folded YAML
     scalars, where a newline at column zero would end the block. #}
 {%- macro unwedge(release) -%}
 {{ helm }} status {{ release }} --namespace {{ mon.namespace }} 2>/dev/null | grep -q '^STATUS: pending' && {{ helm }} uninstall {{ release }} --namespace {{ mon.namespace }} --wait || true;
 {%- endmacro %}
 
 {#- The local chart has no version to pin against, so its stamp is the rendered
-    values plus a hash of every file in the chart. Editing a template is then
-    indistinguishable from editing the values, which is the point. #}
+    values plus a hash of every file in the chart. Editing a template then counts
+    the same as editing the values. #}
 {%- macro gateway_identity() -%}
 { cat {{ gateway_values }}; find {{ gateway.chart }} -type f -exec sha256sum {} + | sort; }
 {%- endmacro %}
@@ -116,12 +114,10 @@ kps-release:
       - file: kps-values
 
 # One mechanism for both dashboards: the repo's JSON is staged under the work
-# directory, and the staged copy is what the ConfigMap is built from and what
-# the guard compares the cluster against.
-#
-# The manifest is built by kubectl rather than templated here because dashboard
-# 1860 is roughly fifteen thousand lines: rendering it through Jinja would mean
-# holding and re-escaping the whole document for no gain.
+# directory, and that copy is both what the ConfigMap is built from and what the
+# guard compares the cluster against. kubectl builds the manifest rather than
+# Jinja because dashboard 1860 is roughly fifteen thousand lines, and rendering
+# it would mean holding and re-escaping the whole document for no gain.
 {% for dashboard in mon.dashboards %}
 {% set name = dashboard.rsplit('.', 1)[0] %}
 {% set configmap = mon.dashboard_prefix ~ name %}
@@ -150,10 +146,9 @@ dashboard-configmap-{{ name }}:
         | {{ kubectl }} label --local --filename - --output yaml
         {{ mon.dashboard_label }}={{ mon.dashboard_label_value }}
         | {{ kubectl }} apply --server-side --force-conflicts --filename -
-    # Compares what the cluster actually holds against the staged file, so a
-    # ConfigMap someone deleted or edited is restored, while an untouched one
-    # keeps a second highstate clean. An `onchanges` on the staged file would
-    # never notice that drift.
+    # Compares what the cluster holds against the staged file, so a ConfigMap
+    # someone deleted or edited is restored while an untouched one keeps a
+    # second highstate clean. `onchanges` on the staged file would miss that.
     - unless: >-
         {{ kubectl }} get configmap {{ configmap }} --namespace {{ mon.namespace }}
         --output jsonpath="{.data['{{ dashboard | replace('.', '\\.') }}']}" 2>/dev/null
@@ -172,12 +167,11 @@ gateway-values:
     - require:
       - file: {{ mon.workdir }}
 
-# Placed before the release on purpose. On a first highstate there is no
-# deployment yet and this is a no-op; on a later one, a rebuilt image has just
-# been imported into containerd and the running pods are still on the old
-# layers, so they are cycled here and the release below then finds nothing to
-# change. An `if` rather than `cmd || true`: a missing deployment is a silent
-# success, but a rollout that genuinely fails still fails the state.
+# Before the release on purpose. On a first highstate there is no deployment and
+# this is a no-op. On a later one a rebuilt image has just been imported and the
+# pods are still on the old layers, so they are cycled here and the release below
+# finds nothing to change. An `if` rather than `cmd || true`, so a missing
+# deployment is a silent success but a failed rollout still fails the state.
 gateway-rollout:
   cmd.run:
     - name: >-
