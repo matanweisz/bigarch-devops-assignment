@@ -27,12 +27,10 @@ munge-user:
 
 munge:
   pkg.installed:
-    # The apt index here is whatever last refreshed it: salt-bootstrap's own
-    # update when it installed Salt on a fresh boot, and nothing at all on a
-    # later `vagrant provision` against a long-lived box, where the pinned
-    # versions the stale index names may no longer be on the mirror. Refreshing
-    # makes this install independent of that, and it reports no state changes,
-    # so it stays invisible in the idempotency proof.
+    # On a fresh boot salt-bootstrap refreshed the apt index. On a later
+    # `vagrant provision` against a long-lived box nothing has, and the versions
+    # a stale index names may be gone from the mirror. Refreshing reports no
+    # state changes, so it stays invisible in the idempotency proof.
     - refresh: True
     - require:
       - user: munge-user
@@ -47,12 +45,12 @@ munge:
 
 # The key file carries the base64 text of 128 random bytes, written verbatim.
 # munged treats the keyfile as opaque bytes, so the text form carries the same
-# entropy as the decoded binary would. Decoding on the node is not an option:
-# Salt 3008 masks pillar values at the pillar.get module boundary and lifts the
-# mask for template renderers and file.managed, but not for file.decode, which
-# therefore receives '**********', discards it as invalid base64 and writes an
-# empty key (verified against 3008.2 on this box). file.managed also sets the
-# final mode atomically, so the key is never world-readable in passing.
+# entropy as the decoded binary. Decoding on the node is not an option: Salt
+# 3008 masks pillar values at the pillar.get boundary and lifts the mask for
+# template renderers and file.managed, but not for file.decode, which receives
+# '**********', discards it as invalid base64 and writes an empty key (verified
+# against 3008.2 on this box). file.managed also sets the final mode atomically,
+# so the key is never world-readable in passing.
 /etc/munge/munge.key:
   file.managed:
     - contents_pillar: munge:key_b64

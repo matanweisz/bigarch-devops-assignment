@@ -9,14 +9,13 @@ AuthType=auth/munge
 SlurmUser=slurm
 
 # DbdHost has to match this machine's hostname or slurmdbd exits saying it is
-# not configured to run here; DbdAddr is what it actually binds, and it has to
-# be the private address slurmctld reaches it on rather than 127.0.1.1.
+# not configured to run here. DbdAddr is what it binds, and it has to be the
+# private address slurmctld reaches it on, not 127.0.1.1.
 DbdHost={{ net['controller_host'] }}
 DbdAddr={{ net['controller_ip'] }}
 
 LogFile=/var/log/slurm/slurmdbd.log
-# Under /run/slurmdbd, for the reason slurm.conf gives for SlurmctldPidFile: the
-# daemon runs as the slurm user and cannot write the top of root-owned /run. The
+# Under /run/slurmdbd, for the reason slurm.conf gives for SlurmctldPidFile. The
 # packaged unit declares RuntimeDirectory=slurmdbd to match.
 PidFile=/run/slurmdbd/slurmdbd.pid
 DebugLevel=info

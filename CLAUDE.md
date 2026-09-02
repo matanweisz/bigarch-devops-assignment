@@ -4,7 +4,7 @@ This file is the working context I maintain for Claude Code while building this
 assignment. It is committed on purpose: the submission criteria ask for transparency
 about AI use, and this file shows exactly what the AI was told, which decisions were
 locked by me, and which constraints it had to respect. The README's AI-usage section
-explains how we worked; this file is the primary artifact of it.
+explains how we worked. This file is the primary artifact of it.
 
 ## What this project is
 
@@ -23,7 +23,7 @@ Nodes on a private network, 192.168.56.0/24:
   kube-prometheus-stack and the custom metrics gateway.
 
 Primary provider is VirtualBox so the same Vagrantfile runs on an Apple Silicon Mac,
-an Ubuntu laptop, or an Intel reviewer machine; a vmware_desktop block is kept as an
+an Ubuntu laptop, or an Intel reviewer machine. A vmware_desktop block is kept as an
 alternative. Box: `bento/ubuntu-24.04`, version pinned, which publishes arm64 and
 amd64 builds for both providers.
 
@@ -53,7 +53,7 @@ change them without my explicit approval.
    `CREATE USER IF NOT EXISTS`, `GRANT`) rendered from pillar into a root-only file
    and applied over the unix socket. Salt's `mysql_*` states need a Python MySQL
    driver inside Salt's own bundled (onedir) interpreter, which cannot see
-   apt-installed packages; the SQL route removes that dependency entirely.
+   apt-installed packages. The SQL route removes that dependency entirely.
 6. Both Helm releases (kube-prometheus-stack and the local gateway chart) are managed
    the same way: `helm upgrade --install --wait`, guarded so highstate reruns are
    clean no-ops and a failed first release still gets retried.
@@ -77,7 +77,7 @@ Forgetting any of these costs hours of debugging.
   and lifts the mask only for template renderers and `file.managed`. `file.decode`
   was missed upstream: it decodes the mask string to zero bytes and writes an empty
   file while reporting Changed. Never use `file.decode` with `contents_pillar` on
-  3008; write the base64 text with `file.managed` instead. When debugging, add
+  3008. Write the base64 text with `file.managed` instead. When debugging, add
   `unmask=True` to `salt-call pillar.get`.
 - Slurm 26.05 demoted munge to a weak package dependency. Install the built DEBs with
   `apt-get install ./*.deb`, never `dpkg -i`, and keep munge as a hard Salt require.
@@ -93,8 +93,8 @@ Forgetting any of these costs hours of debugging.
 - `ProctrackType=proctrack/cgroup` does nothing for resource limits without
   `TaskPlugin=task/cgroup,task/affinity`.
 - K3s must be started with `--node-ip 192.168.56.11` and a `--flannel-iface` naming the
-  private NIC, or it binds the NAT interface; `--write-kubeconfig-mode 644` for a usable
-  kubeconfig. The state derives the interface name from whichever one holds
+  private NIC, or it binds the NAT interface. Add `--write-kubeconfig-mode 644` for a
+  usable kubeconfig. The state derives the interface name from whichever one holds
   `net:compute_ip` instead of assuming `eth1`, with `k3s:flannel_iface` as an override.
 - The gateway chart must ship a ServiceMonitor carrying the kube-prometheus-stack
   release label. Without it Prometheus never scrapes the gateway and the whole
@@ -103,10 +103,10 @@ Forgetting any of these costs hours of debugging.
   kube-proxy scrape targets (K3s does not expose them), and disable the
   node-exporter ServiceMonitor while keeping its DaemonSet, which serves compute's
   9100 while the Podman exporter serves the controller's.
-- Quadlet-generated services cannot be enabled with systemctl; Salt must not set
+- Quadlet-generated services cannot be enabled with systemctl. Salt must not set
   `enable: True` on them, and systemd needs a daemon-reload when the `.container`
   file changes.
-- The gateway runs one worker; its metric store is in memory and entries expire so
+- The gateway runs one worker. Its metric store is in memory and entries expire so
   dashboards do not show stale flat lines after a job ends.
 - Synced folders of type rsync only sync on `up`, `reload`, or `vagrant rsync`.
   After editing Salt states: `vagrant rsync controller`, then provision.

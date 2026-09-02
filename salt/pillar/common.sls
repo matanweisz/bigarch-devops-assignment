@@ -23,23 +23,22 @@ slurm:
       - slurm-smd
       - slurm-smd-client
       - slurm-smd-slurmd
-  # The compute node's NodeName line. Both values are rendered into the one
-  # slurm.conf both nodes share, so neither can come from the local node's
-  # grains. RealMemory is deliberately well under the VM's 6144MB: a value the
-  # kernel cannot back drains the node with no error anywhere obvious. Keep
-  # compute_cpus in step with the Vagrantfile's sizing for the compute machine.
+  # The compute node's NodeName line. Both values go into the one slurm.conf
+  # both nodes share, so neither can come from local grains. RealMemory stays
+  # well under the VM's 6144MB: a value the kernel cannot back drains the node
+  # with no error anywhere obvious. Keep compute_cpus in step with the
+  # Vagrantfile's sizing.
   compute_cpus: 4
   compute_real_memory: 5000
   db:
     name: slurm_acct_db
     user: slurm
     innodb_buffer_pool_size: "256M"
-  # Phase 5: the cron-driven job that reports simulated CPU/GPU/Mem load to
-  # the gateway. minute is the only cron field pillar carries; the other four
-  # are literal '*' in the state, since the schedule the assignment asks for
-  # is entirely in this one field. If time_limit, iterations or sleep_seconds
-  # change, keep the shape the assignment specifies: iterations *
-  # sleep_seconds ~= 60s, well under time_limit.
+  # Phase 5: the cron-driven job reporting simulated CPU/GPU/Mem load to the
+  # gateway. minute is the only cron field pillar carries. The other four are
+  # literal '*' in the state, because the schedule the assignment asks for lives
+  # entirely in this one field. If time_limit, iterations or sleep_seconds
+  # change, keep iterations * sleep_seconds ~= 60s, well under time_limit.
   cron:
     minute: "*/5"
     job_name: metrics-sim
@@ -58,18 +57,18 @@ artifacts:
   root: /vagrant/artifacts
 
 gateway:
+  # The tar is built on the builder and rsynced to every node with the repo. K3s
+  # imports it from disk, so the image is never pulled from a registry.
   image: localhost/metrics-gateway:1.0.0
   node_port: 30080
-  # Written by the builder, rsynced to every node with the repo. K3s imports it
-  # from disk, so the image is never pulled from a registry.
   chart: /vagrant/charts/metrics-gateway
   # The release name doubles as the Deployment name through the chart's
-  # fullname helper; the rollout-restart state in monitoring/init.sls relies
-  # on that, so change both together or not at all.
+  # fullname helper, which the rollout-restart state in monitoring/init.sls
+  # relies on. Change both together or not at all.
   release: metrics-gateway
   # Seconds a reported series lives past its last update. Shorter than the
-  # five-minute cron period on purpose: the dashboard goes quiet between jobs
-  # instead of drawing a flat line from stale values.
+  # five-minute cron period so the dashboard goes quiet between jobs instead of
+  # drawing a flat line from stale values.
   metric_ttl_seconds: 90
   # How long to wait for the gateway to become ready, both for helm --wait and
   # for the rollout that follows a rebuilt image.
@@ -78,15 +77,14 @@ gateway:
 k3s:
   version: "v1.36.4+k3s1"
   install_url: https://get.k3s.io
-  # Fixed by k3s, but read by both the k3s and the monitoring states, so it is
-  # written once here rather than twice in the states.
+  # Fixed by k3s, but read by both the k3s and the monitoring states, so it
+  # lives here once instead of twice in the states.
   kubeconfig: /etc/rancher/k3s/k3s.yaml
   images_dir: /var/lib/rancher/k3s/agent/images
   # K3s follows the default route unless told otherwise, which lands it on
-  # Vagrant's NAT link where no other node can reach it. Left empty the state
-  # derives the right interface from the one holding net:compute_ip, because
-  # the private NIC is not named the same on every provider and box. Set a
-  # name here to override that.
+  # Vagrant's NAT link where no other node can reach it. Left empty, the state
+  # derives the interface from the one holding net:compute_ip, since the private
+  # NIC is not named the same on every provider and box. Set a name to override.
   flannel_iface: ""
 
 helm:
@@ -113,8 +111,8 @@ monitoring:
   prometheus_memory_request: 400Mi
   prometheus_memory_limit: 1Gi
   # Grafana's sidecar imports every ConfigMap carrying this label, which is how
-  # the vendored dashboards get in. Used by both the chart values and the
-  # ConfigMaps themselves, so the two cannot disagree.
+  # the vendored dashboards get in. Set once here so the chart values and the
+  # ConfigMaps cannot disagree.
   dashboard_label: grafana_dashboard
   dashboard_label_value: "1"
   dashboard_prefix: grafana-dashboard-

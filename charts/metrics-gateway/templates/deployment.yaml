@@ -20,7 +20,7 @@ spec:
         - name: metrics-gateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           # The image is imported into K3s's containerd from the builder's
-          # tar; it is never pulled from a registry.
+          # tar, never pulled from a registry.
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: PORT

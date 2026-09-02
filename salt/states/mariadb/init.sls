@@ -9,15 +9,14 @@
 mariadb-server:
   pkg.installed:
     - name: mariadb-server
-    # Same reasoning as the munge package: the apt index is only as fresh as the
-    # last thing that refreshed it, which on a re-provision is nothing. A
-    # refresh reports no state changes, so it costs the idempotency proof
-    # nothing.
+    # Same reasoning as the munge package: on a re-provision nothing has
+    # refreshed the apt index. A refresh reports no state changes, so it costs
+    # the idempotency proof nothing.
     - refresh: True
 
 # Slurm's accounting schema is index-heavy and its purge queries hold locks for
-# a long time on a small VM; both values come straight from the SchedMD
-# accounting guide, sized down for a 3GB node.
+# a long time on a small VM. Both values come from the SchedMD accounting guide,
+# sized down for a 3GB node.
 /etc/mysql/mariadb.conf.d/60-slurm.cnf:
   file.managed:
     - user: root
@@ -54,12 +53,12 @@ mariadb:
         GRANT ALL ON `{{ db['name'] }}`.* TO '{{ db['user'] }}'@'localhost';
 
 # The mysql client authenticates as root over the unix socket, so no credential
-# ever reaches a command line or a process listing.
+# reaches a command line or a process listing.
 #
 # Two guards, and the state runs unless both pass: the account has to exist, and
-# the SQL that produced it has to be the SQL pillar renders today. The second one
-# is what makes a rotated password reach the server, since CREATE USER IF NOT
-# EXISTS alone would silently keep the old one.
+# the SQL has to match what pillar renders today. The second is what makes a
+# rotated password reach the server, since CREATE USER IF NOT EXISTS alone would
+# keep the old one.
 slurm-db-provisioned:
   cmd.run:
     - name: mysql < /root/slurm-db.sql && sha256sum /root/slurm-db.sql > /root/.slurm-db.applied

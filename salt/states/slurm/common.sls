@@ -20,13 +20,10 @@ slurm-group:
     - system: True
 
 # Before the DEBs, always. SchedMD's debian/ ships no maintainer scripts, so
-# nothing in the packages creates this account: the directories they unpack
-# carry ownership numerically and land on whatever the id happens to mean on
-# each node. Claiming the id from pillar first is what makes those directories
-# resolve to the slurm user, and to the same slurm user on both nodes.
-#
-# The account names are fixed by the packaging and by slurm.conf's SlurmUser;
-# only the numeric ids have to agree across nodes, which is what pillar carries.
+# nothing in the packages creates this account, and the directories they unpack
+# carry ownership numerically. Claiming the id from pillar first is what makes
+# them resolve to the same slurm user on both nodes. The account names are fixed
+# by the packaging and by slurm.conf's SlurmUser, so only the ids need pillar.
 slurm-user:
   user.present:
     - name: slurm
@@ -39,14 +36,13 @@ slurm-user:
     - require:
       - group: slurm-group
 
-# Vagrant points each node's own name at 127.0.1.1, which is useless to the other
-# side of the cluster. slurm.conf pins the addresses explicitly as well; these
-# entries are what make sinfo, srun and scontrol output resolvable by hand.
+# Vagrant points each node's own name at 127.0.1.1, useless to the other side of
+# the cluster. slurm.conf pins the addresses too, so these entries exist to make
+# sinfo, srun and scontrol output resolvable by hand.
 #
-# clean drops the name from every other line it appears on, which is the only
-# way the node's own name stops resolving to loopback. Without it Salt leaves
-# the Vagrant line in place and warns about the duplicate on every single
-# highstate, which is exactly the noise the idempotency proof must not have.
+# clean drops the name from every other line it appears on, the only way the
+# node's own name stops resolving to loopback. Without it Salt keeps the Vagrant
+# line and warns about the duplicate on every highstate.
 controller-host-entry:
   host.present:
     - name: {{ net['controller_host'] }}
@@ -59,14 +55,13 @@ compute-host-entry:
     - ip: {{ net['compute_ip'] }}
     - clean: True
 
-# apt-get, never dpkg -i: apt resolves the dependencies between the built
-# packages, and Slurm 26.05 demoted munge to a weak dependency that dpkg would
-# skip. The apt-get update in front is for the box's empty list cache and only
-# runs on the same occasions the install does.
+# apt-get, never dpkg -i: apt resolves dependencies between the built packages,
+# and Slurm 26.05 demoted munge to a weak dependency that dpkg would skip. The
+# apt-get update in front is for the box's empty list cache.
 #
 # The guard compares the installed version against pillar rather than just
 # asking whether the package is there, so bumping slurm:version reinstalls
-# instead of silently keeping the old build.
+# instead of keeping the old build.
 slurm-packages:
   cmd.run:
     - name: >-
@@ -90,11 +85,11 @@ slurm-packages:
     - require:
       - cmd: slurm-packages
 
-# slurmctld and slurmdbd run as SlurmUser and write here; slurmd runs as root
+# slurmctld and slurmdbd run as SlurmUser and write here. slurmd runs as root
 # and does not care who owns the directory.
 #
 # After the packages, not before: dpkg unpacks this directory root-owned, so
-# chowning it first would just be undone by the install.
+# chowning it first would be undone by the install.
 /var/log/slurm:
   file.directory:
     - user: slurm
@@ -115,8 +110,7 @@ slurm-packages:
       - file: /etc/slurm
 
 # Only the compute node's task plugin reads this, but shipping it from the
-# shared state keeps /etc/slurm identical everywhere, which is one less thing to
-# rule out when a job lands wrong.
+# shared state keeps /etc/slurm identical everywhere.
 /etc/slurm/cgroup.conf:
   file.managed:
     - source: salt://slurm/files/cgroup.conf
