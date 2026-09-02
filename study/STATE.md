@@ -1,11 +1,11 @@
-# Session state — updated 2026-09-01 (Ubuntu laptop)
+# Session state: updated 2026-09-01 (Ubuntu laptop)
 
 Where the project stands, for resuming in another session.
 
 ## Where we are
 
 All nine tasks of study/plan.md are implemented, reviewed, and live-verified on the
-Ubuntu amd64 laptop. The working branch is `impl`; the ledger in
+Ubuntu amd64 laptop. The working branch is `impl`. The ledger in
 `.superpowers/sdd/plan/progress.md` records every task, review round, and fix.
 
 The clean-room proof passed on 2026-09-01: `vagrant destroy -f`, artifacts moved
@@ -23,7 +23,7 @@ slurm_job_id and node labels.
   file.decode was missed in the upstream retrofit, so it writes a zero-byte key.
   Documented in CLAUDE.md traps, decisions.md, and the README.
 - The Helm release guards are a single unless comparing a content stamp
-  (values + chart hash + chart version), not unless+onchanges — the pair is an
+  (values + chart hash + chart version), not unless+onchanges. The pair is an
   AND in Salt and would skip upgrades and never retry failed installs.
 - Dashboard ConfigMaps are applied with kubectl apply --server-side: the 469KB
   1860 dashboard exceeds the 256KB last-applied-configuration annotation cap.
@@ -48,7 +48,7 @@ slurm_job_id and node labels.
 ## Environment notes for this laptop
 
 - VirtualBox 7.2.6 (apt) + Vagrant 2.4.9 (.deb). KVM modules coexist fine with
-  VirtualBox here (kernel 7.0); /etc/modprobe.d/blacklist-kvm.conf exists anyway.
+  VirtualBox here (kernel 7.0). /etc/modprobe.d/blacklist-kvm.conf exists anyway.
 - Incremental state edits: `make provision` (rsync both, highstate both). The
   master serves states from the controller's /vagrant, so forgetting the
   controller rsync yields "No matching sls found" on compute.

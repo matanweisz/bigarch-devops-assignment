@@ -1,7 +1,7 @@
 # Tool and design decisions, with the reasoning
 
 One entry per decision: what we picked, why, what else was on the table. Read this
-before the interview; every entry is a likely question.
+before the interview. Every entry is a likely question.
 
 ## Virtualization provider: VirtualBox
 
@@ -56,7 +56,7 @@ the ".sls" wording.
 Pillar is master-held and delivered per-minion over an encrypted channel, so secrets
 (DB password, munge key) and all tunables live there. Grains are minion-reported
 facts, fine for role targeting, never for secrets. map.jinja, the classic Salt
-formula idiom, exists to abstract differences between operating systems; with one OS
+formula idiom, exists to abstract differences between operating systems. With one OS
 across three nodes it would be ceremony, and over-abstraction reads as a negative in
 a hiring review.
 
@@ -69,7 +69,7 @@ file, and write that base64 text verbatim to /etc/munge/munge.key (0600) with
 the text form carries the same entropy as the decoded binary. The original plan
 decoded on the node with `file.decode`, but Salt 3008 masks pillar values at the
 pillar.get module boundary and only lifts the mask for template renderers and
-file.managed — file.decode receives `**********`, silently discards it as invalid
+file.managed. file.decode receives `**********`, silently discards it as invalid
 base64, and writes an empty key (confirmed live against 3008.2). Committing a real
 key to git would be a red flag even in a lab, so the pillar file stays gitignored.
 
@@ -85,10 +85,10 @@ exists to manage.
 
 ## Slurm: 26.05.x built as DEBs with the official Debian flow
 
-Building from source is mandated. SchedMD ships a `debian/` directory in the tarball;
+Building from source is mandated. SchedMD ships a `debian/` directory in the tarball.
 `mk-build-deps -i debian/control` then `debuild -b -uc -us` produces the separated
 `slurm-smd-*` packages the assignment asks for. The version is pinned in pillar for
-reproducibility ("latest" at the time we built; bump one pillar value to upgrade).
+reproducibility ("latest" at the time we built, bump one pillar value to upgrade).
 Installs use `apt-get install ./*.deb`, not `dpkg -i`, because apt resolves the
 inter-package dependencies and because Slurm 26.05 demoted munge to a weak dependency
 that dpkg would skip.
@@ -97,7 +97,7 @@ that dpkg would skip.
 
 Podman is mandated. For running node_exporter idempotently we write a Quadlet
 `.container` file and let systemd manage the service. Salt has no native podman
-state; `podman generate systemd` is deprecated upstream; raw `podman run` from
+state. `podman generate systemd` is deprecated upstream, and raw `podman run` from
 cmd.run duplicates containers on re-runs, which is a named grading criterion. A
 Quadlet unit is declarative: re-running highstate changes nothing unless the file
 changed.
@@ -108,8 +108,8 @@ K3s is mandated. The flags matter: `--node-ip 192.168.56.11` and `--flannel-ifac
 pin it to the private network (Vagrant's first interface is NAT, and K3s would
 otherwise bind that), and `--write-kubeconfig-mode 644` makes kubectl usable without
 sudo. The interface name is derived from whichever NIC holds the compute address rather
-than hardcoded to `eth1`, since it is not named the same on every provider and box;
-pillar can override it. Bundled Traefik stays enabled because the Grafana ingress uses it.
+than hardcoded to `eth1`, since it is not named the same on every provider and box.
+Pillar can override it. Bundled Traefik stays enabled because the Grafana ingress uses it.
 
 ## Helm deployments: helm CLI for both charts
 
@@ -127,7 +127,7 @@ Salt ANDs its gates, so a failed first install is never retried.
 Four scrape targets are disabled (etcd, scheduler, controller-manager, kube-proxy)
 because K3s does not expose them and permanently red targets look sloppy. The chart's
 node-exporter DaemonSet stays on, serving compute's :9100, while the controller's
-:9100 comes from the mandated Podman container; `additionalScrapeConfigs` scrapes
+:9100 comes from the mandated Podman container. `additionalScrapeConfigs` scrapes
 both by static IP, satisfying the assignment's "both nodes" wording, and the
 DaemonSet's ServiceMonitor is disabled so compute isn't scraped twice. Retention is
 2h with resource limits, sized for a 6GB VM.
@@ -137,14 +137,14 @@ DaemonSet's ServiceMonitor is disabled so compute isn't scraped twice. Retention
 "Default user/password" is read as Grafana's own default (admin/admin), set from
 pillar and stated in the README, because a reviewer will try that first. Both
 dashboards (Node Exporter Full 1860 and the custom Slurm panel) are committed as JSON
-and provisioned as sidecar ConfigMaps; the alternative `gnetId` mechanism downloads
+and provisioned as sidecar ConfigMaps. The alternative `gnetId` mechanism downloads
 from grafana.com at every pod start, which breaks offline and isn't reproducible.
 HTTPS works through Traefik's built-in self-signed fallback certificate, so
-cert-manager would be pure overhead; the browser warning is documented.
+cert-manager would be pure overhead. The browser warning is documented.
 
 ## Metrics gateway: Flask plus prometheus_client custom collector
 
-Flask is the smallest mainstream way to get the two required endpoints; the
+Flask is the smallest mainstream way to get the two required endpoints. The
 prometheus_client library guarantees correct exposition format, and a ~20-line custom
 collector renders arbitrary metric names and labels from an in-memory dict.
 Alternatives: FastAPI (async and pydantic buy nothing here), raw http.server (fewer
@@ -158,7 +158,7 @@ explicit assignment instruction, kept without comment as instructed.
 
 `SLURM_JOB_ID` and `SLURMD_NODENAME` only exist inside a Slurm-launched process, so
 the simulation must be a real Slurm job. Cron on the controller submits with sbatch
-every five minutes; slurmd executes the job on compute, which is the only reading
+every five minutes. slurmd executes the job on compute, which is the only reading
 consistent with the assignment putting slurmd on compute. The job loops twelve times
 at five-second intervals, PUTting simulated cpu/gpu/mem values to the gateway's
 NodePort with the job id and node name as labels.
