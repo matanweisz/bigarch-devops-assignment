@@ -22,7 +22,7 @@ halts before the other two machines need it.
 
 ```mermaid
 flowchart LR
-  builder["builder .5<br>debuild, podman build"] -->|"ssh tar pull"| host["host<br>artifacts/"]
+  builder["builder .5<br>debuild, podman build"] -->|"shared folder"| host["host<br>artifacts/"]
   host -->|"rsync folder"| controller["controller .10<br>Salt master"]
   host -->|"rsync folder"| compute["compute .11<br>Salt minion"]
   controller -->|"highstate"| compute
@@ -51,7 +51,7 @@ flowchart TD
 | [gateway/](gateway/) | [app.py](gateway/app.py), [test_app.py](gateway/test_app.py), [Containerfile](gateway/Containerfile) |
 | [charts/metrics-gateway/](charts/metrics-gateway/) | Helm chart for the gateway |
 | [dashboards/](dashboards/) | vendored Grafana JSON: 1860 and the custom Slurm panel |
-| [scripts/](scripts/) | [build.sh](scripts/build.sh), [gen-secrets.sh](scripts/gen-secrets.sh), [verify.sh](scripts/verify.sh), [pull-artifacts.sh](scripts/pull-artifacts.sh) |
+| [scripts/](scripts/) | [build.sh](scripts/build.sh), [gen-secrets.sh](scripts/gen-secrets.sh), [verify.sh](scripts/verify.sh), [halt-builder.sh](scripts/halt-builder.sh) |
 | [Makefile](Makefile) | `up`, `verify`, `test`, `provision`, `destroy` |
 | [docs/](docs/) | the screenshots below |
 
@@ -162,9 +162,10 @@ installs build dependencies from the tarball's own control file, and `debuild -b
 produces the separated `slurm-smd-*` packages. The gateway image is built with
 `podman build` and saved as a tar next to the node_exporter image.
 
-Everything lands in `/opt/artifacts`. A Vagrant trigger streams that directory to the host
-over an SSH tar stream from the builder and powers the machine off, and the rsync
-synced folder carries it on into the other two guests. Two stamps gate the work:
+Everything lands in `/opt/artifacts`, a two-way shared folder mounted only on the
+builder, so the packages and images are on the host the moment build.sh copies them.
+A trigger then powers the machine off, and the rsync synced folder carries the
+artifacts on into the other two guests. Two stamps gate the work:
 `BUILD_STAMP` for the DEBs, `IMAGE_STAMP` for the image tars including a content hash of
 `gateway/`, so editing gateway source rebuilds only the image and skips the 14-minute
 compile. Controller and compute preconditions key off `BUILD_STAMP`, so a missing build
