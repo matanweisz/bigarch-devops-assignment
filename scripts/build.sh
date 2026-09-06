@@ -3,7 +3,8 @@
 #
 # Produces /opt/artifacts: Slurm DEBs built the official Debian way, plus the
 # gateway and node_exporter images saved as tars for the other two nodes to
-# load. A Vagrant trigger pulls the directory back to the host.
+# load. /opt/artifacts is the two-way shared folder the Vagrantfile mounts from
+# the host's ./artifacts, so every copy below lands on the host directly.
 #
 # Two independent stamps, so an image change does not repeat the expensive Slurm
 # compile. BUILD_STAMP covers the DEBs (Slurm version and arch). IMAGE_STAMP

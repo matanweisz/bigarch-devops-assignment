@@ -45,10 +45,11 @@ change them without my explicit approval.
    and applies the same `podman` state the controller uses. One state, two consumers,
    which is the point of the no-duplication criterion.
 4. No NFS synced folders anywhere. macOS 15.4 and later has an unresolved nfsd kernel
-   panic that Vagrant environments reliably trigger. Artifacts travel from the builder
-   to the host over `vagrant ssh` with tar, and from the host to the other guests
-   through normal one-way synced folders. All synced folders are declared
-   `type: "rsync"` so behavior is identical across providers and host OSes.
+   panic that Vagrant environments reliably trigger. The builder writes artifacts into
+   a two-way provider-native shared folder mounted only on that VM (the reviewer asked
+   for the assignment's literal shared folder, which replaced the earlier SSH tar
+   pull). The repo folders stay one-way rsync everywhere, so provisioning behavior is
+   identical across providers and host OSes.
 5. MariaDB provisioning uses plain idempotent SQL (`CREATE DATABASE IF NOT EXISTS`,
    `CREATE USER IF NOT EXISTS`, `GRANT`) rendered from pillar into a root-only file
    and applied over the unix socket. Salt's `mysql_*` states need a Python MySQL

@@ -89,6 +89,13 @@ Vagrant.configure("2") do |config|
   config.vm.define "builder" do |builder|
     base_config(builder.vm, "builder", RSYNC_EXCLUDE + ["artifacts/"])
 
+    # The shared folder the assignment asks for. Two-way and provider native
+    # (vboxsf on VirtualBox, hgfs on VMware), mounted only on the builder:
+    # build.sh copies the DEBs and image tars straight into it, so they land
+    # in ./artifacts on the host with no transfer step. The repo folders stay
+    # one-way rsync, which is why this mount is declared separately.
+    builder.vm.synced_folder "./artifacts", "/opt/artifacts", create: true
+
     # Masterless: the builder is thrown away, so key exchange with the
     # controller's master would buy nothing. It applies the same podman sls the
     # controller does, which is the point of the no-duplication criterion.
@@ -108,8 +115,8 @@ Vagrant.configure("2") do |config|
 
     # Scoped to this define so it never fires for controller or compute.
     builder.trigger.after :up do |t|
-      t.name = "pull artifacts from builder and power it off"
-      t.run = { path: "scripts/pull-artifacts.sh" }
+      t.name = "power off the builder"
+      t.run = { path: "scripts/halt-builder.sh" }
     end
   end
 

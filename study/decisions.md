@@ -22,14 +22,16 @@ supported Slurm build platform and has current Salt and K3s support. The old
 `generic/*` boxes are stale (404s), and `ubuntu/*` cloud images stopped at 22.04 for
 VirtualBox. Pinning the version keeps the deployment reproducible.
 
-## Synced folders: rsync type everywhere, artifacts pulled over SSH
+## Synced folders: rsync for the repo, one shared folder for artifacts
 
 Declaring `type: "rsync"` gives identical one-way host-to-guest behavior on every
-provider and host OS, and avoids VirtualBox's arm64 guest-additions quirks entirely.
-The builder's output goes the other direction, so a Vagrant trigger pulls
-`/opt/artifacts` to the host with `vagrant ssh ... tar`. NFS was the obvious
-bidirectional answer and is explicitly ruled out: macOS 15.4+ has an unfixed nfsd
-kernel panic that Vagrant reliably triggers. vboxsf would tie us to one provider.
+provider and host OS. The builder's output goes the other direction, and the
+reviewer asked for the assignment's literal shared folder, so the builder alone
+mounts host ./artifacts at /opt/artifacts as a two-way provider-native folder
+(vboxsf on VirtualBox, hgfs on VMware) and build.sh copies the DEBs and image
+tars straight into it. The first version pulled the directory over vagrant ssh
+with tar instead. NFS stays ruled out: macOS 15.4+ has an unfixed nfsd kernel
+panic that Vagrant reliably triggers.
 
 ## Configuration management: Salt 3008 LTS, master/minion with auto-accept
 
